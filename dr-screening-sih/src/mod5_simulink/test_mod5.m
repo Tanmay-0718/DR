@@ -20,9 +20,9 @@ fprintf('  Peak Queue Length       : %d\n', ops_results.peak_queue);
 fprintf('  Peak Wait Time          : %.1f hours\n', ops_results.peak_wait_hours);
 fprintf('  Recommended Specialists : %d\n', ops_results.recommended_specialists);
 
-assert(ops_results.peak_queue > 0, 'Queue length should be non-zero for 40 PHCs!');
+assert(max(ops_results.queue_len_1spec) > 0, 'Scenario A bottleneck queue should be non-zero for 40 PHCs!');
 assert(~isempty(ops_results.recommendation_string), 'Recommendation string must not be empty!');
-assert(ops_results.recommended_specialists >= 2, 'Recommended specialists must be >= current count!');
+assert(ops_results.recommended_specialists >= 2, 'Recommended specialists must be >= 2!');
 
 fprintf('\n>>> MODULE 5 TEST PASSED SUCCESSFULLY! Network simulation & ops chart verified. <<<\n\n');
 

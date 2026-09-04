@@ -1,0 +1,11 @@
+Filename,ImagePath,VesselMaskPath,Dataset
+drive_01_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_01_training.png,data\raw\drive\vessel_masks\drive_01_vessels.png,DRIVE Vessel Extraction
+drive_02_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_02_training.png,data\raw\drive\vessel_masks\drive_02_vessels.png,DRIVE Vessel Extraction
+drive_03_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_03_training.png,data\raw\drive\vessel_masks\drive_03_vessels.png,DRIVE Vessel Extraction
+drive_04_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_04_training.png,data\raw\drive\vessel_masks\drive_04_vessels.png,DRIVE Vessel Extraction
+drive_05_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_05_training.png,data\raw\drive\vessel_masks\drive_05_vessels.png,DRIVE Vessel Extraction
+drive_06_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_06_training.png,data\raw\drive\vessel_masks\drive_06_vessels.png,DRIVE Vessel Extraction
+drive_07_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_07_training.png,data\raw\drive\vessel_masks\drive_07_vessels.png,DRIVE Vessel Extraction
+drive_08_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_08_training.png,data\raw\drive\vessel_masks\drive_08_vessels.png,DRIVE Vessel Extraction
+drive_09_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_09_training.png,data\raw\drive\vessel_masks\drive_09_vessels.png,DRIVE Vessel Extraction
+drive_10_training.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\drive\images\drive_10_training.png,data\raw\drive\vessel_masks\drive_10_vessels.png,DRIVE Vessel Extraction
