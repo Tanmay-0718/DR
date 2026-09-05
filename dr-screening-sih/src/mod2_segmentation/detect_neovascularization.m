@@ -30,33 +30,41 @@ top_hat = imtophat(1 - g_ch, se);
 vessels_bin = imbinarize(top_hat, 'adaptive', 'Sensitivity', 0.55);
 vessels_bin(anatomy.optic_disc_mask) = 0; % Mask out main disc area
 
-% 3. Extract fine vessels in peripapillary ROI
+% 3. Extract vessels in peripapillary ROI
 nv_candidates = vessels_bin & ring_roi;
-
-% 4. Compute vessel density and tortuosity (branch point density)
 roi_pixel_count = max(1, sum(ring_roi(:)));
 peripapillary_vessel_density = sum(nv_candidates(:)) / roi_pixel_count;
 
-% Thinning / Skeletonization for tortuosity check
-vessel_skel = bwskel(nv_candidates);
-branch_points = bwmorph(vessel_skel, 'branchpoints');
-branch_density = sum(branch_points(:)) / max(1, sum(vessel_skel(:)));
+% 4. Isolate Fine Proliferative Microvessels from Primary Arcade Trunks
+% Normal retinal vessels passing through the disc ring occupy 15-30% of the ring.
+% True Neovascularization at the Disc (NVD) features fine, disorganized microvascular fronds (<2.5 px),
+% NOT the thick primary arcade trunks.
+thick_trunks = imopen(nv_candidates, strel('disk', 2));
+fine_candidates = nv_candidates & ~thick_trunks;
 
-% 5. Differencing against Normal Baseline Template
-NORMAL_DENSITY_THRESHOLD = 0.08;
-NORMAL_BRANCH_THRESHOLD = 0.05;
+fine_skel = bwskel(fine_candidates);
+fine_branches = bwmorph(fine_skel, 'branchpoints');
+fine_branch_density = sum(fine_branches(:)) / max(1, sum(fine_skel(:)));
+fine_density = sum(fine_candidates(:)) / roi_pixel_count;
 
-has_nv = (peripapillary_vessel_density > NORMAL_DENSITY_THRESHOLD) && ...
-         (branch_density > NORMAL_BRANCH_THRESHOLD);
+% 5. Differencing against Normal Vascular Baseline
+% Normal retinas have fine_branch_density ~ 0.015 - 0.035.
+% True active NVD exhibits tangled proliferation: fine_density > 0.12, fine_branch_density > 0.075,
+% and total peripapillary density > 0.38 (hyper-vascular proliferation).
+has_nv = (peripapillary_vessel_density > 0.38) && ...
+         (fine_branch_density > 0.075) && ...
+         (fine_density > 0.12) && ...
+         (sum(fine_candidates(:)) > 250);
 
 if has_nv
-    nv_mask = nv_candidates;
+    nv_mask = fine_candidates;
 else
     nv_mask = false(H, W);
 end
 
 nv_metrics.peripapillary_vessel_density = peripapillary_vessel_density;
-nv_metrics.branch_density = branch_density;
+nv_metrics.fine_density = fine_density;
+nv_metrics.branch_density = fine_branch_density;
 nv_metrics.has_neovascularization = has_nv;
 
 end

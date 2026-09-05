@@ -19,9 +19,9 @@ end
 fprintf('Building Fused Feature Classifier with backbone: %s\n', backbone_type);
 
 model.backbone_name = backbone_type;
-model.num_handcrafted_features = 6;
+model.num_handcrafted_features = 18;
 model.cnn_feature_dim = 128; % Dimensionality of global CNN embedding
-model.fused_dim = model.cnn_feature_dim + model.num_handcrafted_features; % 134
+model.fused_dim = model.cnn_feature_dim + model.num_handcrafted_features; % 146
 
 % Initialize calibrated weights for 5 ICDR classes (0: No DR, 1: Mild, 2: Moderate, 3: Severe, 4: PDR)
 rng(42);

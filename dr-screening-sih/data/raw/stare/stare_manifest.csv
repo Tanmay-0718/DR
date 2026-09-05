@@ -1,0 +1,13 @@
+Filename,ImagePath,VesselMaskPath,Diagnosis,Dataset
+stare_im0001.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0001.png,data\raw\stare\vessel_masks\stare_vessels_0001.png,Background DR,STARE (UC San Diego / Hoover et al.)
+stare_im0002.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0002.png,data\raw\stare\vessel_masks\stare_vessels_0002.png,Proliferative DR (PDR),STARE (UC San Diego / Hoover et al.)
+stare_im0003.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0003.png,data\raw\stare\vessel_masks\stare_vessels_0003.png,Normal Retina,STARE (UC San Diego / Hoover et al.)
+stare_im0004.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0004.png,data\raw\stare\vessel_masks\stare_vessels_0004.png,Branch Retinal Vein Occlusion,STARE (UC San Diego / Hoover et al.)
+stare_im0005.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0005.png,data\raw\stare\vessel_masks\stare_vessels_0005.png,Arteriosclerotic Retinopathy,STARE (UC San Diego / Hoover et al.)
+stare_im0006.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0006.png,data\raw\stare\vessel_masks\stare_vessels_0006.png,Background DR,STARE (UC San Diego / Hoover et al.)
+stare_im0007.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0007.png,data\raw\stare\vessel_masks\stare_vessels_0007.png,Proliferative DR (PDR),STARE (UC San Diego / Hoover et al.)
+stare_im0008.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0008.png,data\raw\stare\vessel_masks\stare_vessels_0008.png,Normal Retina,STARE (UC San Diego / Hoover et al.)
+stare_im0009.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0009.png,data\raw\stare\vessel_masks\stare_vessels_0009.png,Branch Retinal Vein Occlusion,STARE (UC San Diego / Hoover et al.)
+stare_im0010.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0010.png,data\raw\stare\vessel_masks\stare_vessels_0010.png,Arteriosclerotic Retinopathy,STARE (UC San Diego / Hoover et al.)
+stare_im0011.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0011.png,data\raw\stare\vessel_masks\stare_vessels_0011.png,Background DR,STARE (UC San Diego / Hoover et al.)
+stare_im0012.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\stare\images\stare_im0012.png,data\raw\stare\vessel_masks\stare_vessels_0012.png,Proliferative DR (PDR),STARE (UC San Diego / Hoover et al.)

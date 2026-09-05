@@ -47,7 +47,7 @@ dr_struct.image = img;
 dr_struct.patient_id = patient_id;
 dr_struct.phc_id = phc_id;
 dr_struct.timestamp = datestr(now, 'yyyy-mm-dd HH:MM:SS');
-dr_struct.features = struct('ma_count', 0, 'hem_count', 0, 'exudate_area_pct', 0.0, 'disc_to_lesion_dist', 500.0, 'has_nv', 0, 'feature_vector', zeros(1, 6));
+dr_struct.features = struct('ma_count', 0, 'hem_count', 0, 'exudate_area_pct', 0.0, 'disc_to_lesion_dist', 500.0, 'has_nv', 0, 'feature_vector', zeros(1, 18));
 
 fprintf('========================================================\n');
 fprintf('STARTING FULL 5-MODULE CLINICAL SCREENING PIPELINE\n');

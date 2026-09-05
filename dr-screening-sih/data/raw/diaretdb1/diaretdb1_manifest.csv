@@ -1,0 +1,13 @@
+Filename,ImagePath,MaskPath,LesionTypes,Dataset
+diaretdb1_image001.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image001.png,data\raw\diaretdb1\masks\diaretdb1_mask001.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image002.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image002.png,data\raw\diaretdb1\masks\diaretdb1_mask002.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image003.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image003.png,data\raw\diaretdb1\masks\diaretdb1_mask003.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image004.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image004.png,data\raw\diaretdb1\masks\diaretdb1_mask004.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image005.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image005.png,data\raw\diaretdb1\masks\diaretdb1_mask005.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image006.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image006.png,data\raw\diaretdb1\masks\diaretdb1_mask006.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image007.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image007.png,data\raw\diaretdb1\masks\diaretdb1_mask007.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image008.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image008.png,data\raw\diaretdb1\masks\diaretdb1_mask008.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image009.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image009.png,data\raw\diaretdb1\masks\diaretdb1_mask009.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image010.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image010.png,data\raw\diaretdb1\masks\diaretdb1_mask010.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image011.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image011.png,data\raw\diaretdb1\masks\diaretdb1_mask011.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)
+diaretdb1_image012.png,D:\Hackathon\SIH 2026\DR\dr-screening-sih\data\raw\diaretdb1\images\diaretdb1_image012.png,data\raw\diaretdb1\masks\diaretdb1_mask012.png,"MA, HE, EX, SE",DiaRetDB1 (Kuopio Univ Hospital)

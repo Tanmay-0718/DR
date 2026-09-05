@@ -48,3 +48,672 @@
     linear-gradient(to right, rgba(51, 65, 85, 0.12) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(51, 65, 85, 0.12) 1px, transparent 1px);
 }
+
+/* ========================================================================= */
+/* SLIDE-OVER DRAWER & BACKDROP BLUR ANIMATIONS                              */
+/* ========================================================================= */
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes drawerBackdropFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.drawer-slide-in {
+  animation: slideInFromRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.drawer-fade-in {
+  animation: drawerBackdropFadeIn 0.25s ease-out forwards;
+}
+
+/* ========================================================================= */
+/* THEME 2: CLINICAL WHITE (Hospital Daylight / Light Mode)                  */
+/* ========================================================================= */
+.theme-white,
+html.theme-white,
+body.theme-white {
+  background-color: #f8fafc !important; /* slate-50 */
+  color: #0f172a !important; /* slate-900 */
+}
+
+.theme-white ::selection {
+  background-color: rgba(6, 182, 212, 0.2) !important;
+  color: #0e7490 !important;
+}
+
+/* Scrollbar for White Theme */
+.theme-white ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.theme-white ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.theme-white ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Surface Overrides - Slate 950 (Deep Base / Inputs / Wells) */
+.theme-white .bg-slate-950,
+.theme-white [class*="bg-slate-950/"],
+.theme-white [class*="bg-slate-950"] {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  border-color: #e2e8f0 !important;
+}
+
+/* Surface Overrides - Slate 900 (Cards / Panels / Headers) */
+.theme-white .bg-slate-900,
+.theme-white [class*="bg-slate-900/"],
+.theme-white [class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Surface Overrides - Slate 800 / 850 (Secondary chips, pills, badges) */
+.theme-white .bg-slate-800,
+.theme-white [class*="bg-slate-800/"],
+.theme-white [class*="bg-slate-800"],
+.theme-white .bg-slate-850,
+.theme-white [class*="bg-slate-850"] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Hover States */
+.theme-white [class*="hover:bg-slate-800"]:hover,
+.theme-white [class*="hover:bg-slate-850"]:hover {
+  background-color: #e2e8f0 !important;
+}
+.theme-white [class*="hover:bg-slate-700"]:hover {
+  background-color: #cbd5e1 !important;
+}
+
+/* Border Overrides */
+.theme-white .border-slate-900,
+.theme-white .border-slate-800,
+.theme-white .border-slate-700,
+.theme-white [class*="border-slate-800/"],
+.theme-white [class*="border-slate-700/"],
+.theme-white [class*="border-slate-900/"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text Hierarchy */
+.theme-white .text-slate-100,
+.theme-white .text-slate-200 {
+  color: #0f172a !important; /* Bold primary text */
+}
+.theme-white .text-slate-300,
+.theme-white .text-slate-400 {
+  color: #334155 !important; /* Secondary readable slate */
+}
+.theme-white .text-slate-500 {
+  color: #64748b !important; /* Muted slate */
+}
+.theme-white .text-slate-600 {
+  color: #94a3b8 !important;
+}
+.theme-white [class*="hover:text-slate-200"]:hover,
+.theme-white [class*="hover:text-white"]:hover {
+  color: #0f172a !important;
+}
+
+/* Heading Text-White Fixes */
+.theme-white h1.text-white,
+.theme-white h2.text-white,
+.theme-white h3.text-white {
+  color: #0f172a !important;
+}
+
+/* Glass Panels */
+.theme-white .glass-panel {
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+}
+.theme-white .glass-panel-glow {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(14, 165, 233, 0.35) !important;
+  box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.12) !important;
+}
+
+/* Background Grid Pattern */
+.theme-white .subtle-grid {
+  background-image: 
+    linear-gradient(to right, rgba(203, 213, 225, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.45) 1px, transparent 1px) !important;
+}
+
+/* Inputs, Textareas, Selects */
+.theme-white input:not([type="checkbox"]):not([type="range"]),
+.theme-white select,
+.theme-white textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+.theme-white input:focus,
+.theme-white select:focus,
+.theme-white textarea:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 1px #0284c7 !important;
+}
+.theme-white input[type="range"] {
+  background-color: #cbd5e1 !important;
+}
+
+/* Accent Badges on White */
+.theme-white [class*="bg-emerald-950"] {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+.theme-white [class*="bg-rose-950"] {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+}
+.theme-white [class*="bg-amber-950"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+.theme-white [class*="bg-indigo-950"] {
+  background-color: #eef2ff !important;
+  border-color: #c7d2fe !important;
+  color: #3730a3 !important;
+}
+.theme-white [class*="bg-cyan-950"] {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #0e7490 !important;
+}
+.theme-white [class*="bg-sky-950"] {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+.theme-white [class*="bg-purple-950"] {
+  background-color: #faf5ff !important;
+  border-color: #e9d5ff !important;
+  color: #6b21a8 !important;
+}
+.theme-white [class*="bg-orange-950"] {
+  background-color: #fff7ed !important;
+  border-color: #fed7aa !important;
+  color: #c2410c !important;
+}
+
+/* ========================================================================= */
+/* White Theme High-Contrast Readable Remapping for Neon Colors              */
+/* Remaps bright neon accents (cyan, emerald, amber, etc.) to deep clinical  */
+/* tones with WCAG AAA contrast against white and light slate surfaces       */
+/* ========================================================================= */
+
+/* Cyan & Sky Accents (Deep Clinical Ocean / Cyan-700 #0e7490) */
+.theme-white .text-cyan-400,
+.theme-white .text-cyan-300,
+.theme-white .text-cyan-200,
+.theme-white .text-cyan-100,
+.theme-white .text-cyan-500,
+.theme-white .text-cyan-400\/80,
+.theme-white [class~="text-cyan-400"],
+.theme-white [class~="text-cyan-300"],
+.theme-white [class~="text-cyan-200"],
+.theme-white [class~="text-cyan-100"],
+.theme-white [class~="text-cyan-500"],
+.theme-white [class~="text-cyan-400/80"] {
+  color: #0e7490 !important;
+}
+
+.theme-white .text-sky-400,
+.theme-white .text-sky-300,
+.theme-white .text-sky-200,
+.theme-white .text-sky-100,
+.theme-white .text-sky-500,
+.theme-white [class~="text-sky-400"],
+.theme-white [class~="text-sky-300"],
+.theme-white [class~="text-sky-200"],
+.theme-white [class~="text-sky-100"] {
+  color: #0369a1 !important;
+}
+
+.theme-white .text-teal-400,
+.theme-white .text-teal-300,
+.theme-white .text-teal-200,
+.theme-white .text-teal-500,
+.theme-white [class~="text-teal-400"],
+.theme-white [class~="text-teal-300"],
+.theme-white [class~="text-teal-200"] {
+  color: #0f766e !important;
+}
+
+.theme-white .text-blue-400,
+.theme-white .text-blue-300,
+.theme-white .text-blue-200,
+.theme-white [class~="text-blue-400"],
+.theme-white [class~="text-blue-300"] {
+  color: #1d4ed8 !important;
+}
+
+/* Emerald & Green Accents (Deep Clinical Forest / Emerald-700 #047857) */
+.theme-white .text-emerald-400,
+.theme-white .text-emerald-300,
+.theme-white .text-emerald-200,
+.theme-white .text-emerald-100,
+.theme-white .text-emerald-500,
+.theme-white .text-emerald-400\/80,
+.theme-white [class~="text-emerald-400"],
+.theme-white [class~="text-emerald-300"],
+.theme-white [class~="text-emerald-200"],
+.theme-white [class~="text-emerald-100"],
+.theme-white [class~="text-emerald-500"],
+.theme-white [class~="text-emerald-400/80"] {
+  color: #047857 !important;
+}
+
+.theme-white .text-green-400,
+.theme-white .text-green-300,
+.theme-white .text-green-200,
+.theme-white [class~="text-green-400"],
+.theme-white [class~="text-green-300"] {
+  color: #15803d !important;
+}
+
+/* Amber & Yellow Accents (Rich Bronze Amber-700 #b45309 - replaces neon yellow) */
+.theme-white .text-amber-400,
+.theme-white .text-amber-300,
+.theme-white .text-amber-200,
+.theme-white .text-amber-100,
+.theme-white .text-amber-500,
+.theme-white [class~="text-amber-400"],
+.theme-white [class~="text-amber-300"],
+.theme-white [class~="text-amber-200"],
+.theme-white [class~="text-amber-100"],
+.theme-white [class~="text-amber-500"],
+.theme-white .text-yellow-400,
+.theme-white .text-yellow-300,
+.theme-white .text-yellow-200,
+.theme-white [class~="text-yellow-400"],
+.theme-white [class~="text-yellow-300"] {
+  color: #b45309 !important;
+}
+
+/* Orange Accents (Burnt Orange #c2410c) */
+.theme-white .text-orange-400,
+.theme-white .text-orange-300,
+.theme-white .text-orange-200,
+.theme-white [class~="text-orange-400"],
+.theme-white [class~="text-orange-300"] {
+  color: #c2410c !important;
+}
+
+/* Rose & Red Accents (Deep Ruby Crimson #be123c / #b91c1c) */
+.theme-white .text-rose-400,
+.theme-white .text-rose-300,
+.theme-white .text-rose-200,
+.theme-white .text-rose-100,
+.theme-white .text-rose-500,
+.theme-white [class~="text-rose-400"],
+.theme-white [class~="text-rose-300"],
+.theme-white [class~="text-rose-200"],
+.theme-white [class~="text-rose-100"] {
+  color: #be123c !important;
+}
+
+.theme-white .text-red-400,
+.theme-white .text-red-300,
+.theme-white .text-red-200,
+.theme-white [class~="text-red-400"],
+.theme-white [class~="text-red-300"] {
+  color: #b91c1c !important;
+}
+
+/* Indigo Accents (Deep Indigo-700 #4338ca) */
+.theme-white .text-indigo-400,
+.theme-white .text-indigo-300,
+.theme-white .text-indigo-200,
+.theme-white .text-indigo-100,
+.theme-white .text-indigo-500,
+.theme-white [class~="text-indigo-400"],
+.theme-white [class~="text-indigo-300"],
+.theme-white [class~="text-indigo-200"] {
+  color: #4338ca !important;
+}
+
+/* Purple, Violet & Fuchsia Accents (Deep Purple-700 #6b21a8) */
+.theme-white .text-purple-400,
+.theme-white .text-purple-300,
+.theme-white .text-purple-200,
+.theme-white .text-purple-100,
+.theme-white .text-purple-500,
+.theme-white [class~="text-purple-400"],
+.theme-white [class~="text-purple-300"],
+.theme-white [class~="text-purple-200"],
+.theme-white .text-violet-400,
+.theme-white .text-violet-300,
+.theme-white [class~="text-violet-400"],
+.theme-white [class~="text-violet-300"],
+.theme-white .text-fuchsia-400,
+.theme-white .text-fuchsia-300,
+.theme-white [class~="text-fuchsia-400"],
+.theme-white [class~="text-fuchsia-300"] {
+  color: #6b21a8 !important;
+}
+
+/* Hover & Group-Hover Transitions in White Mode */
+.theme-white [class*="hover:text-cyan"]:hover,
+.theme-white .group:hover [class*="group-hover:text-cyan"] {
+  color: #0e7490 !important;
+}
+.theme-white [class*="hover:text-emerald"]:hover,
+.theme-white .group:hover [class*="group-hover:text-emerald"] {
+  color: #047857 !important;
+}
+.theme-white [class*="hover:text-amber"]:hover,
+.theme-white .group:hover [class*="group-hover:text-amber"] {
+  color: #b45309 !important;
+}
+.theme-white [class*="hover:text-rose"]:hover,
+.theme-white .group:hover [class*="group-hover:text-rose"] {
+  color: #be123c !important;
+}
+.theme-white [class*="hover:text-indigo"]:hover,
+.theme-white .group:hover [class*="group-hover:text-indigo"] {
+  color: #4338ca !important;
+}
+.theme-white [class*="hover:text-purple"]:hover,
+.theme-white .group:hover [class*="group-hover:text-purple"] {
+  color: #6b21a8 !important;
+}
+
+/* Soft Badges, Chips & Pills on White */
+.theme-white [class*="bg-cyan-500/"],
+.theme-white [class*="bg-cyan-600/"] {
+  background-color: #e0f2fe !important; /* sky-100 tint */
+  border-color: #bae6fd !important;
+}
+.theme-white [class*="bg-emerald-500/"] {
+  background-color: #dcfce7 !important; /* emerald-100 tint */
+  border-color: #bbf7d0 !important;
+}
+.theme-white [class*="bg-amber-500/"] {
+  background-color: #fef3c7 !important; /* amber-100 tint */
+  border-color: #fde68a !important;
+}
+.theme-white [class*="bg-rose-500/"] {
+  background-color: #ffe4e6 !important; /* rose-100 tint */
+  border-color: #fecdd3 !important;
+}
+.theme-white [class*="bg-purple-500/"] {
+  background-color: #f3e8ff !important; /* purple-100 tint */
+  border-color: #e9d5ff !important;
+}
+.theme-white [class*="bg-indigo-500/"] {
+  background-color: #e0e7ff !important; /* indigo-100 tint */
+  border-color: #c7d2fe !important;
+}
+.theme-white [class*="bg-sky-500/"] {
+  background-color: #e0f2fe !important;
+  border-color: #bae6fd !important;
+}
+.theme-white [class*="bg-blue-500/"] {
+  background-color: #dbeafe !important;
+  border-color: #bfdbfe !important;
+}
+.theme-white [class*="bg-orange-500/"] {
+  background-color: #ffedd5 !important;
+  border-color: #fed7aa !important;
+}
+
+/* Border Overrides for Dark Accents */
+.theme-white [class*="border-cyan-800"],
+.theme-white [class*="border-cyan-700"],
+.theme-white [class*="border-cyan-500"] {
+  border-color: #a5f3fc !important;
+}
+.theme-white [class*="border-emerald-800"],
+.theme-white [class*="border-emerald-700"],
+.theme-white [class*="border-emerald-500"] {
+  border-color: #a7f3d0 !important;
+}
+.theme-white [class*="border-amber-800"],
+.theme-white [class*="border-amber-700"],
+.theme-white [class*="border-amber-500"] {
+  border-color: #fde68a !important;
+}
+.theme-white [class*="border-rose-800"],
+.theme-white [class*="border-rose-700"],
+.theme-white [class*="border-rose-500"] {
+  border-color: #fecdd3 !important;
+}
+.theme-white [class*="border-indigo-800"],
+.theme-white [class*="border-indigo-700"],
+.theme-white [class*="border-indigo-500"] {
+  border-color: #c7d2fe !important;
+}
+
+/* Rings */
+.theme-white [class*="ring-cyan-500"] {
+  --tw-ring-color: rgba(14, 116, 144, 0.3) !important;
+}
+.theme-white [class*="ring-emerald-500"] {
+  --tw-ring-color: rgba(4, 120, 87, 0.3) !important;
+}
+.theme-white [class*="ring-amber-500"] {
+  --tw-ring-color: rgba(180, 83, 9, 0.3) !important;
+}
+.theme-white [class*="ring-rose-500"] {
+  --tw-ring-color: rgba(190, 18, 60, 0.3) !important;
+}
+
+/* Navbar Active Pill & Brand in White Mode */
+.theme-white header {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+.theme-white footer {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* ========================================================================= */
+/* THEME 3: OLED BLACK (Pitch Black / Pure Dark Mode)                        */
+/* ========================================================================= */
+.theme-black,
+html.theme-black,
+body.theme-black {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.theme-black ::selection {
+  background-color: rgba(6, 182, 212, 0.4) !important;
+  color: #67e8f9 !important;
+}
+
+/* Scrollbar for Black Theme */
+.theme-black ::-webkit-scrollbar-track {
+  background: #000000;
+}
+.theme-black ::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+.theme-black ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Surface Overrides - Slate 950 (True Pitch Black) */
+.theme-black .bg-slate-950,
+.theme-black [class*="bg-slate-950/"],
+.theme-black [class*="bg-slate-950"] {
+  background-color: #000000 !important;
+  border-color: #27272a !important;
+}
+
+/* Surface Overrides - Slate 900 (Zinc 950) */
+.theme-black .bg-slate-900,
+.theme-black [class*="bg-slate-900/"],
+.theme-black [class*="bg-slate-900"] {
+  background-color: #09090b !important;
+  border-color: #27272a !important;
+}
+
+/* Surface Overrides - Slate 800 / 850 (Zinc 900) */
+.theme-black .bg-slate-800,
+.theme-black [class*="bg-slate-800/"],
+.theme-black [class*="bg-slate-800"],
+.theme-black .bg-slate-850,
+.theme-black [class*="bg-slate-850"] {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+}
+
+/* Hover States */
+.theme-black [class*="hover:bg-slate-800"]:hover,
+.theme-black [class*="hover:bg-slate-850"]:hover {
+  background-color: #27272a !important;
+}
+.theme-black [class*="hover:bg-slate-700"]:hover {
+  background-color: #3f3f46 !important;
+}
+
+/* Border Overrides */
+.theme-black .border-slate-900,
+.theme-black .border-slate-800,
+.theme-black .border-slate-700,
+.theme-black [class*="border-slate-800/"],
+.theme-black [class*="border-slate-700/"],
+.theme-black [class*="border-slate-900/"] {
+  border-color: #27272a !important;
+}
+
+/* Text Hierarchy */
+.theme-black .text-slate-100 {
+  color: #ffffff !important;
+}
+.theme-black .text-slate-200 {
+  color: #f4f4f5 !important;
+}
+.theme-black .text-slate-300 {
+  color: #d4d4d8 !important;
+}
+.theme-black .text-slate-400 {
+  color: #a1a1aa !important;
+}
+.theme-black .text-slate-500 {
+  color: #71717a !important;
+}
+.theme-black .text-slate-600 {
+  color: #52525b !important;
+}
+
+/* Glass Panels in Black Mode */
+.theme-black .glass-panel {
+  background: rgba(9, 9, 11, 0.9) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid #27272a !important;
+}
+.theme-black .glass-panel-glow {
+  background: rgba(9, 9, 11, 0.95) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.25) !important;
+}
+
+/* Background Grid Pattern in Black Mode */
+.theme-black .subtle-grid {
+  background-image: 
+    linear-gradient(to right, rgba(39, 39, 42, 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(39, 39, 42, 0.5) 1px, transparent 1px) !important;
+}
+
+/* Inputs in Black Mode */
+.theme-black input:not([type="checkbox"]):not([type="range"]),
+.theme-black select,
+.theme-black textarea {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #27272a !important;
+}
+.theme-black input[type="range"] {
+  background-color: #27272a !important;
+}
+
+/* Navbar in Black Mode */
+.theme-black header {
+  background-color: rgba(9, 9, 11, 0.95) !important;
+  border-color: #27272a !important;
+}
+.theme-black footer {
+  background-color: #000000 !important;
+  border-color: #27272a !important;
+}
+
+/* Print Optimization - Isolates and prints ONLY the Clinical Report */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide entire website interface by default */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Reveal ONLY the clinical printable report container and children */
+  #clinical-printable-report,
+  #clinical-printable-report * {
+    visibility: visible !important;
+  }
+
+  #clinical-printable-report {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 9999999 !important;
+    display: block !important;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
