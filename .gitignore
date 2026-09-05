@@ -1,4 +1,7 @@
- frontend/node_modules/.vite
-frontend/node_modules/.vite/*
+ node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
 *.log
 *.tmp
+.DS_Store
