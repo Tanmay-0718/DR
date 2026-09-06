@@ -16,14 +16,22 @@ import {
   Stethoscope,
   Eye,
   Edit3,
-  ShieldCheck
+  ShieldCheck,
+  HeartPulse,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
+import { getPlainLanguageSummary } from '../utils/reportSummary';
 
 export default function XAIReport({ 
   result, 
   imageUrl = null,
-  patientId = 'PAT-2026-9024', 
-  siteName = 'PHC Block 4, Ratnagiri District Hospital' 
+  odImageUrl = null,
+  osImageUrl = null,
+  patientId = 'PAT-2026-9024',
+  patientData = null,
+  siteName = 'PHC Block 4, Ratnagiri District Hospital',
+  activeEye = 'OD'
 }) {
   if (!result || result.short_circuited) return null;
 
@@ -47,20 +55,29 @@ export default function XAIReport({
   const payload_size_kb = result.payload_size_kb ?? 3.2;
   const total_time_ms = result.total_time_ms ?? 185;
 
+  // Bilateral image resolution
+  const effectiveOdImage = odImageUrl || (activeEye === 'OD' ? imageUrl : null) || '/samples/fundus_001_Grade_0_No_DR.png';
+  const effectiveOsImage = osImageUrl || (activeEye === 'OS' ? imageUrl : null) || '/samples/fundus_002_Grade_0_No_DR.png';
+
   // Patient demographics state (interactive modal before printing)
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [patientDetails, setPatientDetails] = useState({
-    name: 'Ramesh Patel',
-    id: patientId || 'PAT-2026-9024',
-    age: '58',
-    gender: 'Male',
+    name: patientData?.name || 'Ramesh Patel',
+    id: patientData?.patientId || patientId || 'PAT-2026-9024',
+    age: patientData?.age || '58',
+    gender: patientData?.gender || 'Male',
     date: new Date().toISOString().split('T')[0],
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    site: siteName || 'PHC Block 4, Ratnagiri District Hospital',
+    site: patientData?.center || siteName || 'PHC Block 4, Ratnagiri District Hospital',
     clinician: 'Dr. S. Sharma, MD (Ophthalmology)',
-    eyeTested: anatomy.eye_side === 'OS' ? 'OS' : 'OD',
-    clinicalNotes: 'Known Type 2 Diabetes Mellitus x 12 yrs. Recent HbA1c: 8.4%. BP: 136/84 mmHg. Presenting for automated tele-ophthalmology screening.',
+    eyeTested: patientData?.eye || activeEye || (anatomy.eye_side === 'OS' ? 'OS' : 'OD'),
+    clinicalNotes: patientData?.diabetesType 
+      ? `Reported: ${patientData.diabetesType}. Routine tele-ophthalmology screening at ${patientData.center || siteName}.`
+      : 'Known Type 2 Diabetes Mellitus x 12 yrs. Recent HbA1c: 8.4%. BP: 136/84 mmHg. Presenting for automated tele-ophthalmology screening.',
   });
+
+  // Generate plain-language summary for patient understanding
+  const plainSummary = getPlainLanguageSummary(result, patientDetails.eyeTested);
 
   const handlePrintTrigger = () => {
     setIsPatientModalOpen(true);
@@ -207,6 +224,150 @@ export default function XAIReport({
           </div>
           <div className="text-[10px] text-slate-500">
             Dispatched automatically to District Specialist Queue
+          </div>
+        </div>
+      </div>
+
+      {/* On-Screen Patient-Friendly Summary Section (Short & Precise) */}
+      <div className="no-print bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-4 rounded-xl border border-cyan-500/30 shadow-lg space-y-3">
+        <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              <HeartPulse className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-slate-100 uppercase tracking-wider block">
+                Patient-Friendly Summary &bull; सरल सारांश
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Short and precise explanation written in plain language for patients and family
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
+              icdr_grade >= 3 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+              icdr_grade === 2 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+              icdr_grade === 1 ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
+              'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+            }`}>
+              {plainSummary.statusBadge}
+            </span>
+            <span className="text-xs font-mono font-semibold text-cyan-300 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/60">
+              {plainSummary.timeline}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+              1. What The Scan Found (जांच में क्या दिखा)
+            </span>
+            <p className="text-slate-300 leading-relaxed font-medium">
+              {plainSummary.explanation}
+            </p>
+          </div>
+
+          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
+              2. What This Means For Your Vision (आंखों की सुरक्षा)
+            </span>
+            <p className="text-slate-300 leading-relaxed font-medium">
+              {plainSummary.meaning}
+            </p>
+            <div className="text-[11px] font-bold text-slate-200 pt-1 border-t border-slate-800/80">
+              Status: <span className="text-cyan-300">{plainSummary.visionSafety}</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+              3. Next Step Required (अब क्या करना चाहिए)
+            </span>
+            <p className="text-slate-100 font-semibold leading-relaxed">
+              {plainSummary.actionRequired}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/60 flex items-center justify-between">
+          <span>💡 <strong>Healthy Eye Tip:</strong> {plainSummary.keyTips[0]}</span>
+          <span className="text-slate-500 font-mono text-[10px]">Zero medical jargon &bull; Plain English</span>
+        </div>
+      </div>
+
+      {/* On-Screen Bilateral Retinal Photography (Right Eye OD & Left Eye OS) */}
+      <div className="no-print bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Eye className="h-4 w-4 text-cyan-400" />
+            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              Bilateral Digital Fundus Photographs (Left Eye &amp; Right Eye)
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-slate-500">
+            Examined Eye: <strong className="text-cyan-400">{patientDetails.eyeTested === 'OD' ? 'Right Eye (OD)' : (patientDetails.eyeTested === 'OS' ? 'Left Eye (OS)' : 'Both Eyes')}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Right Eye (OD) */}
+          <div className={`p-3 rounded-xl border transition-all ${
+            patientDetails.eyeTested === 'OD'
+              ? 'bg-slate-900 border-cyan-500/50 shadow-md shadow-cyan-950/40 ring-1 ring-cyan-500/30'
+              : 'bg-slate-900/60 border-slate-800'
+          }`}>
+            <div className="flex items-center justify-between text-xs font-bold mb-2">
+              <span className="flex items-center space-x-1.5 text-slate-200">
+                <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 inline-block"></span>
+                <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
+              </span>
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                patientDetails.eyeTested === 'OD' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {patientDetails.eyeTested === 'OD' ? 'Active Examined Eye' : 'Contralateral Baseline'}
+              </span>
+            </div>
+            <div className="h-48 sm:h-56 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
+              <img 
+                src={effectiveOdImage} 
+                alt="Right Eye (OD) Fundus" 
+                className="h-full w-full object-contain"
+              />
+              <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
+                OD &bull; 45° FOV
+              </div>
+            </div>
+          </div>
+
+          {/* Left Eye (OS) */}
+          <div className={`p-3 rounded-xl border transition-all ${
+            patientDetails.eyeTested === 'OS'
+              ? 'bg-slate-900 border-sky-500/50 shadow-md shadow-sky-950/40 ring-1 ring-sky-500/30'
+              : 'bg-slate-900/60 border-slate-800'
+          }`}>
+            <div className="flex items-center justify-between text-xs font-bold mb-2">
+              <span className="flex items-center space-x-1.5 text-slate-200">
+                <span className="h-2.5 w-2.5 rounded-full bg-sky-500 inline-block"></span>
+                <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
+              </span>
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                patientDetails.eyeTested === 'OS' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {patientDetails.eyeTested === 'OS' ? 'Active Examined Eye' : 'Contralateral Baseline'}
+              </span>
+            </div>
+            <div className="h-48 sm:h-56 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
+              <img 
+                src={effectiveOsImage} 
+                alt="Left Eye (OS) Fundus" 
+                className="h-full w-full object-contain"
+              />
+              <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
+                OS &bull; 45° FOV
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -444,6 +605,135 @@ export default function XAIReport({
           <div className="col-span-2">
             <span className="text-slate-500 block text-[10px] font-semibold uppercase">Systemic History &amp; Notes</span>
             <span className="font-medium text-slate-700">{patientDetails.clinicalNotes}</span>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* EXTRA SUMMARY SECTION FOR PATIENT / FAMILY (PLAIN-LANGUAGE SUMMARY)        */}
+        {/* ========================================================================= */}
+        <div className="my-3 p-3.5 rounded-lg border-2 border-slate-700 bg-slate-50 text-slate-900">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-300 pb-2 mb-2.5 gap-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center space-x-1.5">
+                <span>📋 PATIENT &amp; FAMILY SUMMARY &bull; PLAIN-LANGUAGE EXPLANATION (सरल सारांश)</span>
+              </span>
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase border ${
+                icdr_grade >= 3 ? 'bg-rose-100 text-rose-800 border-rose-400' :
+                icdr_grade === 2 ? 'bg-amber-100 text-amber-800 border-amber-400' :
+                icdr_grade === 1 ? 'bg-blue-100 text-blue-800 border-blue-400' :
+                'bg-emerald-100 text-emerald-800 border-emerald-400'
+              }`}>
+                {plainSummary.statusBadge}
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 font-mono">
+              Action Timeline: <span className="underline">{plainSummary.timeline}</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
+                1. What The Scan Found (जांच में क्या दिखा)
+              </span>
+              <p className="text-slate-800 font-medium leading-relaxed">
+                {plainSummary.explanation}
+              </p>
+            </div>
+
+            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
+                2. What This Means For Your Vision (आंखों की सुरक्षा)
+              </span>
+              <p className="text-slate-800 font-medium leading-relaxed">
+                {plainSummary.meaning}
+              </p>
+              <div className="text-[11px] font-bold text-slate-900 pt-1 border-t border-slate-200">
+                Risk Level: <span>{plainSummary.visionSafety}</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
+                3. What You Should Do Next (अब क्या करना चाहिए)
+              </span>
+              <p className="text-slate-950 font-bold leading-relaxed">
+                {plainSummary.actionRequired}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-2 pt-1.5 border-t border-slate-300 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+            <span>💡 <strong>Doctor's Advice:</strong> {plainSummary.keyTips[0]}</span>
+            <span className="text-slate-500 italic">Short and precise summary &bull; Easily understood by non-medical readers</span>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* BILATERAL DIGITAL FUNDUS PHOTOGRAPHS (LEFT EYE & RIGHT EYE)                */}
+        {/* ========================================================================= */}
+        <div className="my-3 p-3 rounded-lg border border-slate-300 bg-slate-50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+              📸 Bilateral Digital Fundus Photographic Evidence (Left Eye &amp; Right Eye)
+            </span>
+            <span className="text-[10px] font-mono text-slate-600">
+              Optical Field: 45° Posterior Pole &bull; Calibrated True-Color Retinal Capture
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Right Eye (OD) */}
+            <div className="border border-slate-300 rounded-lg p-2 bg-white flex flex-col items-center">
+              <div className="w-full flex items-center justify-between text-[10px] font-bold text-slate-800 mb-1">
+                <span className="flex items-center space-x-1">
+                  <span className="h-2 w-2 rounded-full bg-cyan-600 inline-block"></span>
+                  <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
+                </span>
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
+                  patientDetails.eyeTested === 'OD' ? 'bg-cyan-100 text-cyan-800 border border-cyan-300' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {patientDetails.eyeTested === 'OD' ? 'Examined / Analyzed' : 'Contralateral Reference'}
+                </span>
+              </div>
+              <div className="w-full h-36 sm:h-44 bg-black rounded-md overflow-hidden flex items-center justify-center border border-slate-200">
+                <img 
+                  src={effectiveOdImage} 
+                  alt="Right Eye (OD) Retinal Fundus" 
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="w-full text-[10px] text-slate-500 mt-1 flex justify-between">
+                <span>Macula &amp; Disc Focused</span>
+                <span className="font-mono">FOV: 45° &bull; Gradable</span>
+              </div>
+            </div>
+
+            {/* Left Eye (OS) */}
+            <div className="border border-slate-300 rounded-lg p-2 bg-white flex flex-col items-center">
+              <div className="w-full flex items-center justify-between text-[10px] font-bold text-slate-800 mb-1">
+                <span className="flex items-center space-x-1">
+                  <span className="h-2 w-2 rounded-full bg-sky-600 inline-block"></span>
+                  <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
+                </span>
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
+                  patientDetails.eyeTested === 'OS' ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {patientDetails.eyeTested === 'OS' ? 'Examined / Analyzed' : 'Contralateral Reference'}
+                </span>
+              </div>
+              <div className="w-full h-36 sm:h-44 bg-black rounded-md overflow-hidden flex items-center justify-center border border-slate-200">
+                <img 
+                  src={effectiveOsImage} 
+                  alt="Left Eye (OS) Retinal Fundus" 
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="w-full text-[10px] text-slate-500 mt-1 flex justify-between">
+                <span>Macula &amp; Disc Focused</span>
+                <span className="font-mono">FOV: 45° &bull; Gradable</span>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -23,10 +23,39 @@ import {
   Database
 } from 'lucide-react';
 import { SAMPLE_CATALOG, runFullPipeline } from '../utils/imageProcessing';
+import { getPlainLanguageSummary } from '../utils/reportSummary';
 import SegmentationViewer from './SegmentationViewer';
 import GradingCard from './GradingCard';
 import XAIReport from './XAIReport';
 import cloudEhrService from '../services/cloudEhrService';
+
+// Standard paired bilateral samples for complete OD/OS clinical examination
+const SAMPLE_BILATERAL_PAIRS = {
+  grade0: {
+    od: '/samples/fundus_001_Grade_0_No_DR.png',
+    os: '/samples/fundus_002_Grade_0_No_DR.png',
+  },
+  grade1: {
+    od: '/samples/fundus_003_Grade_1_Mild_DR.png',
+    os: '/samples/fundus_004_Grade_1_Mild_DR.png',
+  },
+  grade2: {
+    od: '/samples/fundus_005_Grade_2_Moderate_DR.png',
+    os: '/samples/fundus_006_Grade_2_Moderate_DR.png',
+  },
+  grade3: {
+    od: '/samples/fundus_007_Grade_3_Severe_DR.png',
+    os: '/samples/fundus_008_Grade_3_Severe_DR.png',
+  },
+  grade4: {
+    od: '/samples/fundus_009_Grade_4_PDR.png',
+    os: '/samples/fundus_010_Grade_4_PDR.png',
+  },
+  blur: {
+    od: '/samples/fundus_011_Ungradable_Blur.png',
+    os: '/samples/fundus_002_Grade_0_No_DR.png',
+  }
+};
 
 export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLanding, onOpenRegistry }) {
   // Patient Demographics State
@@ -41,6 +70,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
   });
 
   const [uploadedImageSrc, setUploadedImageSrc] = useState(null);
+  const [odImageSrc, setOdImageSrc] = useState(null);
+  const [osImageSrc, setOsImageSrc] = useState(null);
   const [selectedSample, setSelectedSample] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,7 +95,10 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     setPatientData(prev => ({ ...prev, patientId: `SUN-2026-${num}` }));
   };
 
-  const currentImage = selectedSample ? selectedSample.path : uploadedImageSrc;
+  const currentImage = (patientData.eye === 'OS' ? (osImageSrc || uploadedImageSrc) : (odImageSrc || uploadedImageSrc)) || uploadedImageSrc;
+
+  // Plain-language patient friendly summary
+  const plainSummary = pipelineResult ? getPlainLanguageSummary(pipelineResult, patientData.eye) : null;
 
   // Auto-sync patient examination record to central Cloud EHR
   useEffect(() => {
@@ -223,9 +257,9 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     );
   };
 
-  // Handle custom upload
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  // Handle custom upload for bilateral screening
+  const handleFileUpload = (e, targetEye = null) => {
+    const file = e.target.files?.[0];
     if (file) {
       const name = file.name;
       setFileName(name);
@@ -236,9 +270,20 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
       setClinicianConfirmedCWS(null);
       setClinicianConfirmedIRMA(null);
       setClinicianConfirmedVB(null);
+      
+      const eyeToSet = targetEye || patientData.eye || 'OD';
+      setPatientData(prev => ({ ...prev, eye: eyeToSet }));
+
       const reader = new FileReader();
       reader.onload = (ev) => {
         const src = ev.target.result;
+        if (eyeToSet === 'OD') {
+          setOdImageSrc(src);
+          if (!osImageSrc) setOsImageSrc(src);
+        } else {
+          setOsImageSrc(src);
+          if (!odImageSrc) setOdImageSrc(src);
+        }
         setUploadedImageSrc(src);
         processImage(src, null, name, {});
       };
@@ -246,10 +291,27 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     }
   };
 
-  // Handle sample selection
+  // Switch examined eye between OD and OS and execute pipeline
+  const handleSwitchExaminedEye = (newEye) => {
+    if (patientData.eye === newEye && pipelineResult) return;
+    setPatientData(prev => ({ ...prev, eye: newEye }));
+    const nextImage = newEye === 'OS' ? (osImageSrc || uploadedImageSrc) : (odImageSrc || uploadedImageSrc);
+    if (nextImage) {
+      processImage(nextImage, selectedSample, fileName, {});
+    }
+  };
+
+  // Handle sample selection with automatic bilateral pairing
   const handleSelectSample = (sample) => {
     setSelectedSample(sample);
-    setUploadedImageSrc(sample.path);
+    const pair = SAMPLE_BILATERAL_PAIRS[sample.id];
+    const od = pair ? pair.od : sample.path;
+    const os = pair ? pair.os : sample.path;
+    setOdImageSrc(od);
+    setOsImageSrc(os);
+
+    const activeImg = patientData.eye === 'OS' ? os : od;
+    setUploadedImageSrc(activeImg);
     setFileName(sample.title);
     setClinicianOverrideGrade(null);
     setClinicianConfirmedNV(null);
@@ -257,12 +319,14 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     setClinicianConfirmedCWS(null);
     setClinicianConfirmedIRMA(null);
     setClinicianConfirmedVB(null);
-    processImage(sample.path, sample, sample.title, {});
+    processImage(activeImg, sample, sample.title, {});
   };
 
   // Reset for next patient
   const handleReset = () => {
     setUploadedImageSrc(null);
+    setOdImageSrc(null);
+    setOsImageSrc(null);
     setSelectedSample(null);
     setFileName('');
     setPipelineResult(null);
@@ -408,29 +472,57 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
       {/* STEP 2: FUNDUS IMAGE UPLOAD & SELECTION */}
       {!currentImage && (
         <div className="no-print space-y-6">
-          {/* Drag and drop upload box */}
-          <div className="border-2 border-dashed border-slate-700 hover:border-cyan-500/80 rounded-2xl p-8 sm:p-12 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-4 cursor-pointer group">
-            <div className="h-16 w-16 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-              <Upload className="h-8 w-8" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-100">
-                Upload Patient Retinal Fundus Photograph
-              </h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                Select or drag a fundus camera capture (JPEG, PNG, DICOM). Gatekeeper Mini-Model will verify anatomical ocular validity automatically.
-              </p>
+          {/* Dual Bilateral Upload Zone (OD Right Eye and OS Left Eye) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Right Eye (OD) Upload Box */}
+            <div className="border-2 border-dashed border-slate-700 hover:border-cyan-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 group">
+              <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Eye className="h-7 w-7" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block"></span>
+                  <span>Right Eye (OD &bull; Oculus Dexter)</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                  Standard 45° macula-centered retinal photograph for the right eye.
+                </p>
+              </div>
+              <label className="px-5 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow-md shadow-cyan-600/20 transition-all">
+                <span>Upload Right Eye (OD)</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleFileUpload(e, 'OD')}
+                  className="hidden" 
+                />
+              </label>
             </div>
 
-            <label className="px-6 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow-md shadow-cyan-600/20 transition-all">
-              <span>Browse Local Fundus File</span>
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleFileUpload}
-                className="hidden" 
-              />
-            </label>
+            {/* Left Eye (OS) Upload Box */}
+            <div className="border-2 border-dashed border-slate-700 hover:border-sky-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 group">
+              <div className="h-14 w-14 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/30 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Eye className="h-7 w-7" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-sky-400 inline-block"></span>
+                  <span>Left Eye (OS &bull; Oculus Sinister)</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                  Standard 45° macula-centered retinal photograph for the left eye.
+                </p>
+              </div>
+              <label className="px-5 py-2.5 rounded-xl font-bold text-xs bg-sky-600 hover:bg-sky-500 text-white cursor-pointer shadow-md shadow-sky-600/20 transition-all">
+                <span>Upload Left Eye (OS)</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleFileUpload(e, 'OS')}
+                  className="hidden" 
+                />
+              </label>
+            </div>
           </div>
 
           {/* Quick preset selector tray */}
@@ -440,7 +532,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                 <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
                 <span>Or Select a Calibrated Clinical Ground-Truth Case</span>
               </span>
-              <span className="text-[10px] text-slate-500 font-mono">APTOS 2019 &amp; IDRiD Calibrated</span>
+              <span className="text-[10px] text-slate-500 font-mono">Bilateral Paired Sets (OD + OS)</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -573,6 +665,170 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                       )}
                       {pipelineResult.etdrs_421?.risk_profile || 'Routine protocol based on International Clinical Diabetic Retinopathy (ICDR) standard.'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Plain-Language Patient-Friendly Summary Card (Short & Precise for Patients & Family) */}
+                {plainSummary && (
+                  <div className="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-4 sm:p-5 rounded-xl border border-cyan-500/30 shadow-lg space-y-3">
+                    <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                          <HeartPulse className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-100 uppercase tracking-wider block">
+                            Patient-Friendly Summary &bull; सरल सारांश
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Short and precise explanation written in plain language for patients and family
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
+                          pipelineResult.icdr_grade >= 3 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+                          pipelineResult.icdr_grade === 2 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+                          pipelineResult.icdr_grade === 1 ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
+                          'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        }`}>
+                          {plainSummary.statusBadge}
+                        </span>
+                        <span className="text-xs font-mono font-semibold text-cyan-300 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/60">
+                          {plainSummary.timeline}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+                          1. What The Scan Found (जांच में क्या दिखा)
+                        </span>
+                        <p className="text-slate-300 leading-relaxed font-medium">
+                          {plainSummary.explanation}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                        <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
+                          2. What This Means For Your Vision (आंखों की सुरक्षा)
+                        </span>
+                        <p className="text-slate-300 leading-relaxed font-medium">
+                          {plainSummary.meaning}
+                        </p>
+                        <div className="text-[11px] font-bold text-slate-200 pt-1 border-t border-slate-800/80">
+                          Status: <span className="text-cyan-300">{plainSummary.visionSafety}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                          3. Next Step Required (अब क्या करना चाहिए)
+                        </span>
+                        <p className="text-slate-100 font-semibold leading-relaxed">
+                          {plainSummary.actionRequired}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2">
+                      <span>💡 <strong>Healthy Eye Tip:</strong> {plainSummary.keyTips[0]}</span>
+                      <span className="text-slate-500 font-mono text-[10px]">Zero medical jargon &bull; Plain English</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bilateral Retinal Photography (Right Eye OD & Left Eye OS) */}
+                <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Eye className="h-4 w-4 text-cyan-400" />
+                      <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                        Bilateral Digital Fundus Photographs (Left Eye &amp; Right Eye)
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-400">
+                      Currently Examining: <strong className="text-cyan-400">{patientData.eye === 'OD' ? 'Right Eye (OD)' : 'Left Eye (OS)'}</strong>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Right Eye (OD) */}
+                    <div className={`p-3 rounded-xl border transition-all ${
+                      patientData.eye === 'OD'
+                        ? 'bg-slate-900 border-cyan-500/50 shadow-md shadow-cyan-950/40 ring-1 ring-cyan-500/30'
+                        : 'bg-slate-900/60 border-slate-800'
+                    }`}>
+                      <div className="flex items-center justify-between text-xs font-bold mb-2">
+                        <span className="flex items-center space-x-1.5 text-slate-200">
+                          <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 inline-block"></span>
+                          <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
+                        </span>
+                        {patientData.eye === 'OD' ? (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            Active Examined Eye
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSwitchExaminedEye('OD')}
+                            className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
+                          >
+                            <span>Analyze Right Eye (OD)</span>
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="h-44 sm:h-52 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
+                        <img 
+                          src={odImageSrc || (patientData.eye === 'OD' ? currentImage : '/samples/fundus_001_Grade_0_No_DR.png')} 
+                          alt="Right Eye (OD) Fundus" 
+                          className="h-full w-full object-contain"
+                        />
+                        <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
+                          OD &bull; 45° FOV
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Left Eye (OS) */}
+                    <div className={`p-3 rounded-xl border transition-all ${
+                      patientData.eye === 'OS'
+                        ? 'bg-slate-900 border-sky-500/50 shadow-md shadow-sky-950/40 ring-1 ring-sky-500/30'
+                        : 'bg-slate-900/60 border-slate-800'
+                    }`}>
+                      <div className="flex items-center justify-between text-xs font-bold mb-2">
+                        <span className="flex items-center space-x-1.5 text-slate-200">
+                          <span className="h-2.5 w-2.5 rounded-full bg-sky-500 inline-block"></span>
+                          <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
+                        </span>
+                        {patientData.eye === 'OS' ? (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                            Active Examined Eye
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSwitchExaminedEye('OS')}
+                            className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
+                          >
+                            <span>Analyze Left Eye (OS)</span>
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="h-44 sm:h-52 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
+                        <img 
+                          src={osImageSrc || (patientData.eye === 'OS' ? currentImage : '/samples/fundus_002_Grade_0_No_DR.png')} 
+                          alt="Left Eye (OS) Fundus" 
+                          className="h-full w-full object-contain"
+                        />
+                        <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
+                          OS &bull; 45° FOV
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -723,8 +979,12 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                   <XAIReport 
                     result={pipelineResult} 
                     imageUrl={currentImage}
+                    odImageUrl={odImageSrc || (patientData.eye === 'OD' ? currentImage : '/samples/fundus_001_Grade_0_No_DR.png')}
+                    osImageUrl={osImageSrc || (patientData.eye === 'OS' ? currentImage : '/samples/fundus_002_Grade_0_No_DR.png')}
                     patientId={patientData.patientId}
+                    patientData={patientData}
                     siteName={patientData.center}
+                    activeEye={patientData.eye}
                   />
                 </div>
               )}
