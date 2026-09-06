@@ -18,7 +18,10 @@ import {
   Wifi, 
   CheckCircle2,
   Lock,
-  Terminal
+  Terminal,
+  Home,
+  FileText,
+  Sparkles
 } from 'lucide-react';
 
 export default function NavigationDrawer({ 
@@ -29,7 +32,10 @@ export default function NavigationDrawer({
   theme, 
   setTheme,
   isDevMode = false,
-  onLockDevMode
+  onLockDevMode,
+  onOpenDevLogin,
+  clinicalView = 'landing',
+  setClinicalView
 }) {
   // Close on Escape key press
   useEffect(() => {
@@ -158,32 +164,87 @@ export default function NavigationDrawer({
           </div>
 
           <div className="space-y-2">
-            {/* 2. Clinical Screening Pipeline (Always accessible) */}
-            <button
-              onClick={() => { setActiveTab('pipeline'); onClose(); }}
-              className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between group ${
-                activeTab === 'pipeline'
-                  ? 'bg-slate-800 text-cyan-400 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
-                  : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800 hover:border-slate-700 text-slate-300'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className={`p-2.5 rounded-lg ${activeTab === 'pipeline' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
-                  <Activity className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-xs text-slate-100 flex items-center space-x-1.5">
-                    <span>Clinical Screening Pipeline</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">Mod 1-4</span>
+            {!isDevMode ? (
+              <>
+                {/* 1. Patient Diagnostic Screening */}
+                <button
+                  onClick={() => {
+                    if (setClinicalView) setClinicalView('screening');
+                    onClose();
+                  }}
+                  className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between group ${
+                    clinicalView === 'screening'
+                      ? 'bg-slate-800 text-cyan-400 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
+                      : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${clinicalView === 'screening' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
+                      <Activity className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-100 flex items-center space-x-1.5">
+                        <span>Patient Diagnostic Screening</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">Live</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Demographics intake, Gate 0 filter &amp; AI Staging</p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">IQA, Multi-Lesion Masks, ETDRS 4-2-1 Staging &amp; Report</p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
-            </button>
+                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                </button>
 
-            {/* UNLOCKED: ITEMS 3, 4, 5, 6 APPEAR ONLY WHEN DEV MODE IS ACTIVE */}
-            {isDevMode ? (
+                {/* 2. Clinical Portal Overview */}
+                <button
+                  onClick={() => {
+                    if (setClinicalView) setClinicalView('landing');
+                    onClose();
+                  }}
+                  className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between group ${
+                    clinicalView === 'landing'
+                      ? 'bg-slate-800 text-cyan-400 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
+                      : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${clinicalView === 'landing' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
+                      <Home className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-100 flex items-center space-x-1.5">
+                        <span>Clinical Portal Home</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">DR pathology info, clinic guidelines &amp; protocol</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Restricted Developer Suite Trigger */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      if (onOpenDevLogin) onOpenDevLogin();
+                    }}
+                    className="w-full p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 hover:bg-amber-950/40 text-left transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-400 group-hover:scale-105 transition-transform">
+                        <Lock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-amber-200 flex items-center space-x-1.5">
+                          <span>Developer Operations Console</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">Protected</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Enter passcode to unlock SGD, Benchmarks &amp; SimEvents</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-amber-400/60 group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </div>
+              </>
+            ) : (
               <>
                 {/* Dev Mode Active Status Bar */}
                 <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-between text-xs my-1">
@@ -202,6 +263,30 @@ export default function NavigationDrawer({
                     </button>
                   )}
                 </div>
+
+                {/* 2. Clinical Screening Pipeline */}
+                <button
+                  onClick={() => { setActiveTab('pipeline'); onClose(); }}
+                  className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between group ${
+                    activeTab === 'pipeline'
+                      ? 'bg-slate-800 text-cyan-400 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
+                      : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${activeTab === 'pipeline' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
+                      <Activity className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-100 flex items-center space-x-1.5">
+                        <span>Clinical Screening Pipeline</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">Mod 1-4</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">IQA, Multi-Lesion Masks, ETDRS 4-2-1 Staging &amp; Report</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                </button>
 
                 {/* 3. Real-Time Training Studio */}
                 <button
@@ -298,8 +383,26 @@ export default function NavigationDrawer({
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                 </button>
+
+                {/* Return to Clinical Daily Frontend option */}
+                <div className="pt-2 border-t border-slate-800/80">
+                  <button
+                    onClick={() => {
+                      if (onLockDevMode) onLockDevMode();
+                      if (setClinicalView) setClinicalView('landing');
+                      onClose();
+                    }}
+                    className="w-full p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800 text-left transition-all flex items-center justify-between text-xs text-slate-400 hover:text-slate-200"
+                  >
+                    <span className="flex items-center space-x-2">
+                      <Home className="h-3.5 w-3.5 text-cyan-400" />
+                      <span>Return to Clinical Daily Frontend</span>
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </>
-            ) : null}
+            )}
           </div>
         </div>
 
@@ -355,7 +458,7 @@ export default function NavigationDrawer({
 
           {/* System Footer Note */}
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-            <span>Chakshuh AI v2.4</span>
+            <span>Sunetra AI v2.4</span>
             <span className="text-emerald-400/80 flex items-center space-x-1">
               <ShieldCheck className="h-3 w-3" />
               <span>MATLAB Core Intact</span>
