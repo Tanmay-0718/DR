@@ -203,14 +203,20 @@ export default function XAIReport({
             </div>
             <p className="text-xs text-slate-300">
               {dme_risk 
-                ? `Hard exudates detected at ${lesions.fovea_exudate_dist_dd} DD from fovea center (threshold <= 1.0 DD). Patient requires urgent OCT confirmation to prevent central vision loss.`
-                : `No hard exudates encroaching within 1.0 disc diameter of the foveal avascular zone (distance: ${lesions.fovea_exudate_dist_dd} DD).`}
+                ? (
+                    effectiveOdResult?.dme_risk && effectiveOsResult?.dme_risk
+                      ? `Bilateral DME Risk: Exudates encroaching within 1.0 DD of fovea center in Both Eyes (OD: ${effectiveOdResult.lesions?.fovea_exudate_dist_dd} DD, OS: ${effectiveOsResult.lesions?.fovea_exudate_dist_dd} DD). Urgent bilateral OCT confirmation required.`
+                      : effectiveOdResult?.dme_risk
+                        ? `Right Eye (OD) DME Risk: Hard exudates detected at ${effectiveOdResult.lesions?.fovea_exudate_dist_dd} DD from fovea center (threshold <= 1.0 DD). Left Eye spared. Urgent OCT confirmation required.`
+                        : `Left Eye (OS) DME Risk: Hard exudates detected at ${effectiveOsResult?.lesions?.fovea_exudate_dist_dd} DD from fovea center (threshold <= 1.0 DD). Right Eye spared. Urgent OCT confirmation required.`
+                  )
+                : `No hard exudates encroaching within 1.0 disc diameter of the foveal avascular zone (OD: ${effectiveOdResult?.lesions?.fovea_exudate_dist_dd ?? lesions.fovea_exudate_dist_dd} DD, OS: ${effectiveOsResult?.lesions?.fovea_exudate_dist_dd ?? 'N/A'} DD).`}
             </p>
           </div>
         </div>
 
         {/* Retinal Wall Pathology & Ischemic Biomarkers Alert */}
-        {(lesions.has_retinal_scarring || lesions.has_cws || lesions.has_irma) && (
+        {(lesions.has_retinal_scarring || lesions.has_cws || lesions.has_irma || effectiveOdResult?.lesions?.has_retinal_scarring || effectiveOsResult?.lesions?.has_retinal_scarring || effectiveOdResult?.lesions?.has_cws || effectiveOsResult?.lesions?.has_cws || effectiveOdResult?.lesions?.has_irma || effectiveOsResult?.lesions?.has_irma) && (
           <div className="p-3 rounded-lg border bg-slate-900/90 border-amber-500/30 flex items-start space-x-2.5">
             <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -219,18 +225,27 @@ export default function XAIReport({
                   Retinal Wall Pathology &amp; Ischemic Biomarkers:
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  {lesions.has_retinal_scarring ? 'PRP SCAR BURNS DETECTED' : 'ISCHEMIC LESIONS PRESENT'}
+                  {(effectiveOdResult?.lesions?.has_retinal_scarring || effectiveOsResult?.lesions?.has_retinal_scarring || lesions.has_retinal_scarring) ? 'PRP SCAR BURNS DETECTED' : 'ISCHEMIC LESIONS PRESENT'}
                 </span>
               </div>
               <p className="text-xs text-slate-300">
-                {lesions.has_retinal_scarring && (
-                  <span>Panretinal photocoagulation (PRP) laser scarring detected ({lesions.scar_count || 28} circular thermal burns across mid-periphery). </span>
+                {(effectiveOdResult?.lesions?.has_retinal_scarring || effectiveOsResult?.lesions?.has_retinal_scarring || lesions.has_retinal_scarring) && (
+                  <span>Panretinal photocoagulation (PRP) laser scarring detected (
+                    {effectiveOdResult?.lesions?.has_retinal_scarring ? `OD: ${effectiveOdResult.lesions?.scar_count || 28} burns ` : ''}
+                    {effectiveOsResult?.lesions?.has_retinal_scarring ? `OS: ${effectiveOsResult.lesions?.scar_count || 28} burns ` : ''}
+                    across mid-periphery). </span>
                 )}
-                {lesions.has_cws && (
-                  <span>Cotton wool spots detected ({lesions.cotton_wool_spots} soft exudates indicating focal axonal transport disruption and nerve fiber layer ischemia). </span>
+                {(effectiveOdResult?.lesions?.has_cws || effectiveOsResult?.lesions?.has_cws || lesions.has_cws) && (
+                  <span>Cotton wool spots detected (
+                    {effectiveOdResult?.lesions?.has_cws ? `OD: ${effectiveOdResult.lesions?.cotton_wool_spots} ` : ''}
+                    {effectiveOsResult?.lesions?.has_cws ? `OS: ${effectiveOsResult.lesions?.cotton_wool_spots} ` : ''}
+                    soft exudates indicating focal axonal transport disruption and nerve fiber layer ischemia). </span>
                 )}
-                {lesions.has_irma && (
-                  <span>Intraretinal microvascular abnormalities (IRMA) detected (dilated collateral shunt loops indicative of severe capillary hypoperfusion). </span>
+                {(effectiveOdResult?.lesions?.has_irma || effectiveOsResult?.lesions?.has_irma || lesions.has_irma) && (
+                  <span>Intraretinal microvascular abnormalities (IRMA) detected (
+                    {effectiveOdResult?.lesions?.has_irma ? `OD: ${effectiveOdResult.lesions?.irma_count || 1} loops ` : ''}
+                    {effectiveOsResult?.lesions?.has_irma ? `OS: ${effectiveOsResult.lesions?.irma_count || 1} loops ` : ''}
+                    indicative of severe capillary hypoperfusion). </span>
                 )}
               </p>
             </div>
@@ -798,70 +813,455 @@ export default function XAIReport({
         </div>
 
         {/* Structured Findings Table */}
-        <div className="my-3 overflow-hidden rounded-lg border border-slate-200">
-          <table className="w-full text-xs text-left">
+        <div className="my-3 overflow-hidden rounded-lg border border-slate-300 shadow-sm">
+          <table className="w-full text-xs text-left border-collapse">
             <thead>
               <tr className="bg-slate-200 text-slate-800 font-bold border-b border-slate-300">
-                <th className="p-2.5">Biomarker / Finding</th>
-                <th className="p-2.5">Quantitative Value</th>
-                <th className="p-2.5">Clinical Classification</th>
-                <th className="p-2.5">Clinical Recommendation</th>
+                <th className="p-2.5 w-[20%]">Biomarker / Finding</th>
+                <th className="p-2.5 w-[27%] bg-cyan-100/70 border-x border-slate-300 text-cyan-950">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="h-2 w-2 rounded-full bg-cyan-600 inline-block shrink-0"></span>
+                    <span className="font-bold">Right Eye (OD &bull; Oculus Dexter)</span>
+                  </div>
+                  <div className="text-[10px] font-semibold text-cyan-800 tracking-wider uppercase mt-0.5">
+                    Finding &bull; Classification
+                  </div>
+                </th>
+                <th className="p-2.5 w-[27%] bg-sky-100/70 border-r border-slate-300 text-sky-950">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="h-2 w-2 rounded-full bg-sky-600 inline-block shrink-0"></span>
+                    <span className="font-bold">Left Eye (OS &bull; Oculus Sinister)</span>
+                  </div>
+                  <div className="text-[10px] font-semibold text-sky-800 tracking-wider uppercase mt-0.5">
+                    Finding &bull; Classification
+                  </div>
+                </th>
+                <th className="p-2.5 w-[26%]">Patient Triage &amp; Clinical Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {/* Row 1: Diabetic Retinopathy Stage */}
               <tr>
-                <td className="p-2 font-bold text-slate-900">Diabetic Retinopathy Stage</td>
-                <td className="p-2 font-mono">Grade {icdr_grade} (Conf: {(confidence * 100).toFixed(1)}%)</td>
-                <td className="p-2 font-semibold text-slate-900">{class_info.name}</td>
-                <td className="p-2 text-slate-700">{class_info.action}</td>
-              </tr>
-              <tr>
-                <td className="p-2 font-bold text-slate-900">Macular Edema (DME) Assessment</td>
-                <td className="p-2 font-mono">Fovea Dist: {lesions.fovea_exudate_dist_dd} DD | Exudates: {lesions.exudate_area_pct}%</td>
-                <td className={`p-2 font-bold ${dme_risk ? 'text-amber-800' : 'text-emerald-800'}`}>
-                  {dme_risk ? 'POSITIVE (HIGH RISK — FOVEAL ENCROACHMENT)' : 'NEGATIVE (LOW RISK — FOVEA SPARED)'}
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>Diabetic Retinopathy Stage</div>
+                  <div className="text-[10px] text-slate-500 font-normal">ICDR Clinical Severity Scale</div>
                 </td>
-                <td className="p-2 text-slate-700">{dme_risk ? 'Urgent Macular OCT Referral (<2 weeks) to assess central involvement' : 'Routine Macular Review'}</td>
-              </tr>
-              <tr>
-                <td className="p-2 font-bold text-slate-900">ETDRS 4-2-1 Severe NPDR Rule</td>
-                <td className="p-2 font-mono">
-                  Criteria Met: {result.etdrs_421?.score ?? 0}/3 (4Q Hems: {result.etdrs_421?.rule4_hem_met ? 'Yes' : 'No'}, 2Q VB: {result.etdrs_421?.rule2_vb_met ? 'Yes' : 'No'}, 1Q IRMA: {result.etdrs_421?.rule1_irma_met ? 'Yes' : 'No'})
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-900 font-semibold">
+                          Grade {effectiveOdResult.icdr_grade} (Conf: {((effectiveOdResult.confidence ?? 0.95) * 100).toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOdResult.icdr_grade >= 3 ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                          effectiveOdResult.icdr_grade === 2 ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                          effectiveOdResult.icdr_grade === 1 ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                          'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        }`}>
+                          {effectiveOdResult.class_info?.name || ICDR_STAGE_NAMES[effectiveOdResult.icdr_grade] || 'No DR'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
                 </td>
-                <td className={`p-2 font-semibold ${result.etdrs_421?.is_very_severe_npdr ? 'text-rose-800 font-bold' : ((result.etdrs_421?.score >= 1) ? 'text-orange-800' : 'text-slate-700')}`}>
-                  {result.etdrs_421?.is_very_severe_npdr ? 'VERY SEVERE NPDR (~50% 1-YR PDR RISK)' : ((result.etdrs_421?.score >= 1) ? 'SEVERE NPDR (~15% 1-YR PDR RISK)' : 'CRITERIA NOT MET (<5% 1-YR RISK)')}
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-900 font-semibold">
+                          Grade {effectiveOsResult.icdr_grade} (Conf: {((effectiveOsResult.confidence ?? 0.95) * 100).toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOsResult.icdr_grade >= 3 ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                          effectiveOsResult.icdr_grade === 2 ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                          effectiveOsResult.icdr_grade === 1 ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                          'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        }`}>
+                          {effectiveOsResult.class_info?.name || ICDR_STAGE_NAMES[effectiveOsResult.icdr_grade] || 'No DR'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
                 </td>
-                <td className="p-2 text-slate-700">{result.etdrs_421?.risk_profile || 'Routine monitoring'}</td>
-              </tr>
-              <tr>
-                <td className="p-2 font-bold text-slate-900">Retinal Wall Scarring &amp; PRP Laser</td>
-                <td className="p-2 font-mono">{lesions.scar_count || 0} Burns ({lesions.scar_type || 'None'})</td>
-                <td className={`p-2 font-semibold ${lesions.has_retinal_scarring ? 'text-amber-800' : 'text-slate-700'}`}>
-                  {lesions.has_retinal_scarring ? 'PRP THERMAL BURNS DETECTED (TREATED PDR)' : 'INTACT RETINAL WALL ARCHITECTURE'}
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="font-bold text-slate-900 mb-0.5">
+                    Overall: Grade {overallGrade} ({overallClassInfo.name})
+                  </div>
+                  <div className="leading-snug">{overallClassInfo.action}</div>
                 </td>
-                <td className="p-2 text-slate-700">{lesions.has_retinal_scarring ? 'Prior panretinal photocoagulation; monitor peripheral traction' : 'Normal retinal wall architecture'}</td>
               </tr>
+
+              {/* Row 2: Macular Edema (DME) Assessment */}
               <tr>
-                <td className="p-2 font-bold text-slate-900">Cotton Wool Spots (CWS) &amp; IRMA</td>
-                <td className="p-2 font-mono">CWS: {lesions.cotton_wool_spots || 0} | IRMA Loops: {lesions.irma_count || 0}</td>
-                <td className={`p-2 font-semibold ${(lesions.has_cws || lesions.has_irma) ? 'text-rose-800' : 'text-slate-700'}`}>
-                  {lesions.has_irma ? 'IRMA Positive (Pre-proliferative)' : (lesions.has_cws ? 'CWS Positive (Nerve Fiber Infarct)' : 'ABSENT')}
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>Macular Edema (DME)</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Foveal Infiltration Threshold (&le;1.0 DD)</div>
                 </td>
-                <td className="p-2 text-slate-700">{lesions.has_irma ? 'High risk of neovascularization; 3-month review' : (lesions.has_cws ? 'Focal axonal transport stasis' : 'Adequate microvascular perfusion')}</td>
-              </tr>
-              <tr>
-                <td className="p-2 font-bold text-slate-900">Microvascular Lesions &amp; NV</td>
-                <td className="p-2 font-mono">MAs: {lesions.ma_count} | Hems: {lesions.hem_count}</td>
-                <td className="p-2 font-semibold text-slate-900">
-                  {lesions.has_nv ? 'ACTIVE NEOVASCULARIZATION (GRADE 4 PDR)' : 'NO ACTIVE NEOVASCULARIZATION'}
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          Dist: {effectiveOdResult.lesions?.fovea_exudate_dist_dd ?? 3.5} DD | Exudates: {effectiveOdResult.lesions?.exudate_area_pct ?? 0}%
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOdResult.dme_risk ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        }`}>
+                          {effectiveOdResult.dme_risk ? 'POSITIVE (HIGH RISK — FOVEAL INVOLVEMENT)' : 'NEGATIVE (LOW RISK — SPARED)'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
                 </td>
-                <td className="p-2 text-slate-700">{lesions.has_nv ? 'Urgent Panretinal Photocoagulation / Anti-VEGF' : 'Microvascular monitoring'}</td>
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          Dist: {effectiveOsResult.lesions?.fovea_exudate_dist_dd ?? 3.5} DD | Exudates: {effectiveOsResult.lesions?.exudate_area_pct ?? 0}%
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOsResult.dme_risk ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        }`}>
+                          {effectiveOsResult.dme_risk ? 'POSITIVE (HIGH RISK — FOVEAL INVOLVEMENT)' : 'NEGATIVE (LOW RISK — SPARED)'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="leading-snug">
+                    {overallDmeRisk
+                      ? 'Urgent Macular OCT Referral (<2 weeks) to assess foveal subretinal fluid'
+                      : 'Routine macular review with annual tele-screening'}
+                  </div>
+                </td>
               </tr>
+
+              {/* Row 3: ETDRS 4-2-1 Severe NPDR Rule */}
               <tr>
-                <td className="p-2 font-bold text-slate-900">Image Quality Assessment (IQA Gate)</td>
-                <td className="p-2 font-mono">Sharpness: {result.iqa_metrics?.sharpness?.toFixed(6) || 'Pass'} | Latency: {total_time_ms} ms</td>
-                <td className="p-2 font-semibold text-emerald-800">GRADABLE (PASS)</td>
-                <td className="p-2 text-slate-700">High diagnostic confidence for clinical telemedicine</td>
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>ETDRS 4-2-1 Severe NPDR Rule</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Pre-proliferative Risk Stratification</div>
+                </td>
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          Met: {effectiveOdResult.etdrs_421?.score ?? 0}/3 (4Q-Hem: {effectiveOdResult.etdrs_421?.rule4_hem_met ? 'Y' : 'N'}, 2Q-VB: {effectiveOdResult.etdrs_421?.rule2_vb_met ? 'Y' : 'N'}, 1Q-IRMA: {effectiveOdResult.etdrs_421?.rule1_irma_met ? 'Y' : 'N'})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOdResult.etdrs_421?.is_very_severe_npdr ? 'bg-rose-100 text-rose-900 border border-rose-300' :
+                          ((effectiveOdResult.etdrs_421?.score >= 1) ? 'bg-orange-100 text-orange-900 border border-orange-300' : 'bg-slate-100 text-slate-700 border border-slate-200')
+                        }`}>
+                          {effectiveOdResult.etdrs_421?.is_very_severe_npdr ? 'VERY SEVERE NPDR (~50% 1-YR RISK)' :
+                           ((effectiveOdResult.etdrs_421?.score >= 1) ? 'SEVERE NPDR (~15% 1-YR RISK)' : 'CRITERIA NOT MET (<5% 1-YR RISK)')}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          Met: {effectiveOsResult.etdrs_421?.score ?? 0}/3 (4Q-Hem: {effectiveOsResult.etdrs_421?.rule4_hem_met ? 'Y' : 'N'}, 2Q-VB: {effectiveOsResult.etdrs_421?.rule2_vb_met ? 'Y' : 'N'}, 1Q-IRMA: {effectiveOsResult.etdrs_421?.rule1_irma_met ? 'Y' : 'N'})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOsResult.etdrs_421?.is_very_severe_npdr ? 'bg-rose-100 text-rose-900 border border-rose-300' :
+                          ((effectiveOsResult.etdrs_421?.score >= 1) ? 'bg-orange-100 text-orange-900 border border-orange-300' : 'bg-slate-100 text-slate-700 border border-slate-200')
+                        }`}>
+                          {effectiveOsResult.etdrs_421?.is_very_severe_npdr ? 'VERY SEVERE NPDR (~50% 1-YR RISK)' :
+                           ((effectiveOsResult.etdrs_421?.score >= 1) ? 'SEVERE NPDR (~15% 1-YR RISK)' : 'CRITERIA NOT MET (<5% 1-YR RISK)')}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="leading-snug">
+                    {(effectiveOdResult?.etdrs_421?.is_very_severe_npdr || effectiveOsResult?.etdrs_421?.is_very_severe_npdr)
+                      ? 'Urgent retinal specialist review within 48-72 hrs for high risk of neovascular conversion'
+                      : ((effectiveOdResult?.etdrs_421?.score >= 1 || effectiveOsResult?.etdrs_421?.score >= 1)
+                          ? 'Ophthalmic review in 3-4 months; monitor pre-retinal ischemia'
+                          : 'Routine ETDRS screening protocol')}
+                  </div>
+                </td>
+              </tr>
+
+              {/* Row 4: Retinal Wall Scarring & PRP Laser */}
+              <tr>
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>Retinal Wall Scarring &amp; PRP</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Structural Integrity &amp; Prior Laser Therapy</div>
+                </td>
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          {effectiveOdResult.lesions?.scar_count || 0} Burns ({effectiveOdResult.lesions?.scar_type || 'None'})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOdResult.lesions?.has_retinal_scarring ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {effectiveOdResult.lesions?.has_retinal_scarring ? 'PRP SCARS DETECTED (TREATED PDR)' : 'INTACT RETINAL ARCHITECTURE'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          {effectiveOsResult.lesions?.scar_count || 0} Burns ({effectiveOsResult.lesions?.scar_type || 'None'})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOsResult.lesions?.has_retinal_scarring ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {effectiveOsResult.lesions?.has_retinal_scarring ? 'PRP SCARS DETECTED (TREATED PDR)' : 'INTACT RETINAL ARCHITECTURE'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="leading-snug">
+                    {(effectiveOdResult?.lesions?.has_retinal_scarring || effectiveOsResult?.lesions?.has_retinal_scarring)
+                      ? 'Prior panretinal photocoagulation; monitor peripheral traction & scar stability'
+                      : 'Normal retinal wall architecture; no laser barrier defects'}
+                  </div>
+                </td>
+              </tr>
+
+              {/* Row 5: Cotton Wool Spots (CWS) & IRMA */}
+              <tr>
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>Cotton Wool Spots &amp; IRMA</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Nerve Fiber Infarction &amp; Shunt Vessels</div>
+                </td>
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          CWS: {effectiveOdResult.lesions?.cotton_wool_spots || 0} | IRMA: {effectiveOdResult.lesions?.irma_count || 0}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOdResult.lesions?.has_irma ? 'bg-rose-100 text-rose-900 border border-rose-300' :
+                          (effectiveOdResult.lesions?.has_cws ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-700 border border-slate-200')
+                        }`}>
+                          {effectiveOdResult.lesions?.has_irma ? 'IRMA POSITIVE (PRE-PROLIFERATIVE)' :
+                           (effectiveOdResult.lesions?.has_cws ? 'CWS POSITIVE (AXONAL INFARCTS)' : 'ABSENT (PERFUSED)')}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          CWS: {effectiveOsResult.lesions?.cotton_wool_spots || 0} | IRMA: {effectiveOsResult.lesions?.irma_count || 0}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOsResult.lesions?.has_irma ? 'bg-rose-100 text-rose-900 border border-rose-300' :
+                          (effectiveOsResult.lesions?.has_cws ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-700 border border-slate-200')
+                        }`}>
+                          {effectiveOsResult.lesions?.has_irma ? 'IRMA POSITIVE (PRE-PROLIFERATIVE)' :
+                           (effectiveOsResult.lesions?.has_cws ? 'CWS POSITIVE (AXONAL INFARCTS)' : 'ABSENT (PERFUSED)')}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="leading-snug">
+                    {(effectiveOdResult?.lesions?.has_irma || effectiveOsResult?.lesions?.has_irma)
+                      ? 'High risk of neovascular progression; 3-month ophthalmic review'
+                      : ((effectiveOdResult?.lesions?.has_cws || effectiveOsResult?.lesions?.has_cws)
+                          ? 'Focal axonal transport stasis; optimize glycemic & hypertensive control'
+                          : 'Adequate retinal microvascular perfusion')}
+                  </div>
+                </td>
+              </tr>
+
+              {/* Row 6: Microvascular Lesions & NV */}
+              <tr>
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>Microvascular Lesions &amp; NV</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Microaneurysms, Hemorrhages &amp; Neovascularization</div>
+                </td>
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          MAs: {effectiveOdResult.lesions?.ma_count || 0} | Hems: {effectiveOdResult.lesions?.hem_count || 0}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOdResult.lesions?.has_nv ? 'bg-rose-100 text-rose-900 border border-rose-300 font-black' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {effectiveOdResult.lesions?.has_nv ? 'ACTIVE NEOVASCULARIZATION (GRADE 4 PDR)' : 'NO ACTIVE NEOVASCULARIZATION'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          MAs: {effectiveOsResult.lesions?.ma_count || 0} | Hems: {effectiveOsResult.lesions?.hem_count || 0}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          effectiveOsResult.lesions?.has_nv ? 'bg-rose-100 text-rose-900 border border-rose-300 font-black' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {effectiveOsResult.lesions?.has_nv ? 'ACTIVE NEOVASCULARIZATION (GRADE 4 PDR)' : 'NO ACTIVE NEOVASCULARIZATION'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="leading-snug">
+                    {(effectiveOdResult?.lesions?.has_nv || effectiveOsResult?.lesions?.has_nv)
+                      ? 'Emergency Panretinal Photocoagulation / Anti-VEGF therapy within 24-48 hrs'
+                      : 'Microvascular monitoring per ICDR severity tier'}
+                  </div>
+                </td>
+              </tr>
+
+              {/* Row 7: Image Quality Assessment (IQA Gate) */}
+              <tr>
+                <td className="p-2.5 font-bold text-slate-900 align-top">
+                  <div>Image Quality Assessment (IQA)</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Clarity &amp; Diagnostic Gradability Gate</div>
+                </td>
+                <td className="p-2.5 align-top bg-cyan-50/20 border-x border-slate-200">
+                  {effectiveOdResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          Sharpness: {typeof effectiveOdResult.iqa_metrics?.sharpness === 'number' ? effectiveOdResult.iqa_metrics.sharpness.toFixed(4) : 'Pass'} | Latency: {effectiveOdResult.total_time_ms ?? total_time_ms} ms
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          GRADABLE (PASS)
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top bg-sky-50/20 border-r border-slate-200">
+                  {effectiveOsResult ? (
+                    <div className="space-y-1">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Finding</span>
+                        <span className="font-mono text-[11px] text-slate-800">
+                          Sharpness: {typeof effectiveOsResult.iqa_metrics?.sharpness === 'number' ? effectiveOsResult.iqa_metrics.sharpness.toFixed(4) : 'Pass'} | Latency: {effectiveOsResult.total_time_ms ?? total_time_ms} ms
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Classification</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          GRADABLE (PASS)
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-2 text-center text-slate-400 italic text-[11px]">Not Scanned</div>
+                  )}
+                </td>
+                <td className="p-2.5 align-top text-slate-700 text-[11px]">
+                  <div className="leading-snug">
+                    High diagnostic confidence; valid for tele-ophthalmology referral and automated grading
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
