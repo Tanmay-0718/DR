@@ -3,12 +3,7 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Eye, 
-  Activity, 
-  CheckCircle2, 
-  AlertCircle,
-  FileText,
-  Lock,
-  Sparkles
+  Lock 
 } from 'lucide-react';
 
 /**
@@ -82,51 +77,8 @@ export default function ClinicalLandingView({ onStartScreening, onOpenDevLogin }
             </p>
           </div>
 
-          {/* Key Clinical Features List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
-              <div className="flex items-center space-x-2 text-cyan-300 font-bold text-xs">
-                <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span>ETDRS 4-2-1 Rule Staging</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-normal">
-                4-quadrant hemorrhage density, venous beading caliber, and IRMA detection.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
-              <div className="flex items-center space-x-2 text-emerald-300 font-bold text-xs">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Gate 0 Anatomical Filter</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-normal">
-                Mini-model rejects scenery and non-ocular images before deep inference.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
-              <div className="flex items-center space-x-2 text-amber-300 font-bold text-xs">
-                <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0" />
-                <span>Macular Edema (DME) Risk</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-normal">
-                Immediate clinical referral alerts when exudates approach the central fovea.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
-              <div className="flex items-center space-x-2 text-indigo-300 font-bold text-xs">
-                <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
-                <span>Instant Official PDF Report</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-normal">
-                Full patient demographics, biomarker tables, lesion overlays, and action protocols.
-              </p>
-            </div>
-          </div>
-
           {/* High-Impact Action Button: [Start] matching sketch */}
-          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <button
               onClick={onStartScreening}
               className="px-8 py-4 rounded-xl font-bold text-base bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-500 text-white shadow-xl shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-3 group"
