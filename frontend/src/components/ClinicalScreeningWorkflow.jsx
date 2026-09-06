@@ -22,7 +22,7 @@ import {
   Cloud,
   Database
 } from 'lucide-react';
-import { SAMPLE_CATALOG, runFullPipeline } from '../utils/imageProcessing';
+import { SAMPLE_CATALOG, runFullPipeline, ICDR_CLASSES } from '../utils/imageProcessing';
 import SegmentationViewer from './SegmentationViewer';
 import GradingCard from './GradingCard';
 import XAIReport from './XAIReport';
@@ -73,6 +73,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
   const [osImageSrc, setOsImageSrc] = useState(null);
   const [odFileName, setOdFileName] = useState('');
   const [osFileName, setOsFileName] = useState('');
+  const [odResult, setOdResult] = useState(null);
+  const [osResult, setOsResult] = useState(null);
   const [selectedSample, setSelectedSample] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -101,41 +103,88 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     ? (osImageSrc || (uploadedImageSrc && !odImageSrc ? uploadedImageSrc : null)) 
     : (odImageSrc || (uploadedImageSrc && !osImageSrc ? uploadedImageSrc : null));
 
+  // Patient-level overall bilateral staging metrics
+  const overallGrade = Math.max(
+    odResult?.icdr_grade ?? 0,
+    osResult?.icdr_grade ?? 0,
+    pipelineResult?.icdr_grade ?? 0
+  );
+  const overallReferable = Boolean(
+    odResult?.referable_dr ||
+    osResult?.referable_dr ||
+    pipelineResult?.referable_dr ||
+    overallGrade >= 2
+  );
+  const overallDmeRisk = Boolean(
+    odResult?.dme_risk ||
+    osResult?.dme_risk ||
+    pipelineResult?.dme_risk
+  );
+  const overallClassInfo = ICDR_CLASSES[overallGrade] || pipelineResult?.class_info || { name: 'No DR', action: 'Routine annual screening' };
+
   // Auto-sync patient examination record to central Cloud EHR
   useEffect(() => {
-    if (pipelineResult && pipelineResult.gate0?.valid !== false && !cloudSynced) {
-      cloudEhrService.savePatientRecord(patientData, {
-        ...pipelineResult,
-        imageSrc: currentImage
-      });
-      setCloudSynced(true);
+    if ((pipelineResult || odResult || osResult) && !cloudSynced) {
+      const bestResult = pipelineResult || odResult || osResult;
+      if (bestResult?.gate0?.valid !== false) {
+        cloudEhrService.savePatientRecord(patientData, {
+          ...bestResult,
+          odResult,
+          osResult,
+          overallGrade,
+          overallReferable,
+          overallDmeRisk,
+          odImageSrc,
+          osImageSrc,
+          imageSrc: currentImage
+        });
+        setCloudSynced(true);
+      }
     }
-  }, [pipelineResult, cloudSynced, patientData, currentImage]);
+  }, [pipelineResult, odResult, osResult, cloudSynced, patientData, currentImage, overallGrade, overallReferable, overallDmeRisk, odImageSrc, osImageSrc]);
 
-  // Execute pipeline
+  // Execute pipeline for a single eye image and return promise
+  const analyzeSingleEye = (src, sample = null, fName = '', overrideOpts = {}) => {
+    return new Promise((resolve) => {
+      if (!src) return resolve(null);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = src;
+
+      img.onload = async () => {
+        try {
+          const sampleId = sample ? sample.id : null;
+          const result = await runFullPipeline(img, sampleId, fName, overrideOpts);
+          resolve(result);
+        } catch (err) {
+          console.error('Screening pipeline execution error for eye:', err);
+          resolve(null);
+        }
+      };
+
+      img.onerror = () => {
+        console.error('Failed to load image for eye analysis');
+        resolve(null);
+      };
+    });
+  };
+
+  // Re-process active eye when clinician toggles an override
   const processImage = async (src, sample = null, fName = '', overrideOpts = {}) => {
     setIsProcessing(true);
-
-    // Create an image element to read canvas pixels
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = src;
-
-    img.onload = async () => {
-      try {
-        const sampleId = sample ? sample.id : null;
-        const result = await runFullPipeline(img, sampleId, fName, overrideOpts);
+    try {
+      const result = await analyzeSingleEye(src, sample, fName, overrideOpts);
+      if (result) {
         setPipelineResult(result);
-      } catch (err) {
-        console.error('Screening pipeline execution error:', err);
-      } finally {
-        setIsProcessing(false);
+        if (patientData.eye === 'OS') {
+          setOsResult(result);
+        } else {
+          setOdResult(result);
+        }
       }
-    };
-
-    img.onerror = () => {
+    } finally {
       setIsProcessing(false);
-    };
+    }
   };
 
   // Clinician override toggle handlers
@@ -274,7 +323,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
       const eyeToSet = targetEye || patientData.eye || 'OD';
 
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         const src = ev.target.result;
         if (eyeToSet === 'OD') {
           setOdImageSrc(src);
@@ -284,65 +333,129 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
           setOsFileName(name);
         }
 
-        // If diagnostic results are already showing (Step 4) and user uploaded/replaced the active eye, re-process
-        if (pipelineResult && patientData.eye === eyeToSet) {
-          setUploadedImageSrc(src);
-          setFileName(name);
-          processImage(src, null, name, {});
+        // If diagnostic results are already showing (Step 4), re-process this specific eye
+        if (pipelineResult || odResult || osResult) {
+          setIsProcessing(true);
+          try {
+            const res = await analyzeSingleEye(src, null, name, {});
+            if (eyeToSet === 'OD') {
+              setOdResult(res);
+            } else {
+              setOsResult(res);
+            }
+            if (patientData.eye === eyeToSet && res) {
+              setUploadedImageSrc(src);
+              setFileName(name);
+              setPipelineResult(res);
+            }
+          } finally {
+            setIsProcessing(false);
+          }
         }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Start diagnostic screening on uploaded image from Step 2
-  const handleStartScreening = (targetEye = null) => {
-    const chosenEye = targetEye || (patientData.eye === 'OS' && osImageSrc ? 'OS' : (odImageSrc ? 'OD' : 'OS'));
-    const activeImg = chosenEye === 'OS' ? (osImageSrc || odImageSrc) : (odImageSrc || osImageSrc);
-    const fName = chosenEye === 'OS' ? (osFileName || 'Left_Eye_OS.png') : (odFileName || 'Right_Eye_OD.png');
+  // Start diagnostic screening: bilateral concurrent execution when both eyes present
+  const handleStartScreening = async (targetEye = null) => {
+    setIsProcessing(true);
+    try {
+      const preferredEye = targetEye || patientData.eye || 'OD';
+      let resOD = odResult;
+      let resOS = osResult;
 
-    setPatientData(prev => ({ ...prev, eye: chosenEye }));
-    setFileName(fName);
-    setUploadedImageSrc(activeImg);
-    if (activeImg) {
-      processImage(activeImg, null, fName, {});
+      if (odImageSrc && osImageSrc) {
+        [resOD, resOS] = await Promise.all([
+          analyzeSingleEye(odImageSrc, selectedSample, odFileName || 'Right_Eye_OD.png'),
+          analyzeSingleEye(osImageSrc, selectedSample, osFileName || 'Left_Eye_OS.png')
+        ]);
+        setOdResult(resOD);
+        setOsResult(resOS);
+      } else if (odImageSrc) {
+        resOD = await analyzeSingleEye(odImageSrc, selectedSample, odFileName || 'Right_Eye_OD.png');
+        setOdResult(resOD);
+      } else if (osImageSrc) {
+        resOS = await analyzeSingleEye(osImageSrc, selectedSample, osFileName || 'Left_Eye_OS.png');
+        setOsResult(resOS);
+      }
+
+      const activeEye = (preferredEye === 'OS' && resOS) ? 'OS' : (resOD ? 'OD' : 'OS');
+      const activeRes = activeEye === 'OS' ? resOS : resOD;
+      const activeImg = activeEye === 'OS' ? osImageSrc : odImageSrc;
+      const activeFileName = activeEye === 'OS' ? (osFileName || 'Left_Eye_OS.png') : (odFileName || 'Right_Eye_OD.png');
+
+      setPatientData(prev => ({ ...prev, eye: activeEye }));
+      setUploadedImageSrc(activeImg);
+      setFileName(activeFileName);
+      setPipelineResult(activeRes);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // Switch examined eye between OD and OS and execute pipeline
-  const handleSwitchExaminedEye = (newEye) => {
-    if (patientData.eye === newEye && pipelineResult) return;
+  // Instant switch between examined eyes (OD and OS) with zero-latency in-memory swap
+  const handleSwitchExaminedEye = async (newEye) => {
     setPatientData(prev => ({ ...prev, eye: newEye }));
-    const nextImage = newEye === 'OS' ? osImageSrc : odImageSrc;
-    const nextFileName = newEye === 'OS' ? (osFileName || 'Left_Eye_OS.png') : (odFileName || 'Right_Eye_OD.png');
-    if (nextImage) {
-      setUploadedImageSrc(nextImage);
-      setFileName(nextFileName);
-      processImage(nextImage, selectedSample, nextFileName, {});
+    const targetResult = newEye === 'OS' ? osResult : odResult;
+    const targetImage = newEye === 'OS' ? osImageSrc : odImageSrc;
+    const targetFileName = newEye === 'OS' ? (osFileName || 'Left_Eye_OS.png') : (odFileName || 'Right_Eye_OD.png');
+
+    setUploadedImageSrc(targetImage);
+    setFileName(targetFileName);
+
+    if (targetResult) {
+      setPipelineResult(targetResult);
+    } else if (targetImage) {
+      setIsProcessing(true);
+      try {
+        const res = await analyzeSingleEye(targetImage, selectedSample, targetFileName);
+        if (newEye === 'OS') setOsResult(res);
+        else setOdResult(res);
+        setPipelineResult(res);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
-  // Handle sample selection with automatic bilateral pairing
-  const handleSelectSample = (sample) => {
+  // Handle sample selection with automatic bilateral pairing & concurrent screening
+  const handleSelectSample = async (sample) => {
     setSelectedSample(sample);
     const pair = SAMPLE_BILATERAL_PAIRS[sample.id];
     const od = pair ? pair.od : sample.path;
     const os = pair ? pair.os : sample.path;
+    const odTitle = `${sample.title} (OD)`;
+    const osTitle = `${sample.title} (OS)`;
     setOdImageSrc(od);
     setOsImageSrc(os);
-    setOdFileName(`${sample.title} (OD)`);
-    setOsFileName(`${sample.title} (OS)`);
+    setOdFileName(odTitle);
+    setOsFileName(osTitle);
 
-    const activeImg = patientData.eye === 'OS' ? os : od;
-    setUploadedImageSrc(activeImg);
-    setFileName(sample.title);
     setClinicianOverrideGrade(null);
     setClinicianConfirmedNV(null);
     setClinicianConfirmedScarring(null);
     setClinicianConfirmedCWS(null);
     setClinicianConfirmedIRMA(null);
     setClinicianConfirmedVB(null);
-    processImage(activeImg, sample, sample.title, {});
+
+    setIsProcessing(true);
+    try {
+      const [resOD, resOS] = await Promise.all([
+        analyzeSingleEye(od, sample, odTitle),
+        analyzeSingleEye(os, sample, osTitle)
+      ]);
+      setOdResult(resOD);
+      setOsResult(resOS);
+
+      const activeEye = patientData.eye === 'OS' ? 'OS' : 'OD';
+      const activeRes = activeEye === 'OS' ? resOS : resOD;
+      setPipelineResult(activeRes || resOD || resOS);
+      setUploadedImageSrc(activeEye === 'OS' ? os : od);
+      setFileName(activeEye === 'OS' ? osTitle : odTitle);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Reset for next patient
@@ -350,6 +463,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     setUploadedImageSrc(null);
     setOdImageSrc(null);
     setOsImageSrc(null);
+    setOdResult(null);
+    setOsResult(null);
     setOdFileName('');
     setOsFileName('');
     setSelectedSample(null);
@@ -740,15 +855,16 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
           ) : (
             /* IF IMAGE IS GRADABLE: SHOW FULL PATIENT DIAGNOSTIC REPORT */
             <div className="space-y-6">
-              {/* Report Header Card */}
+              {/* Report Header Card with Bilateral Eye Quick Toggles */}
               <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 sm:p-6 shadow-xl space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
                   <div>
-                    <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">
-                      Diagnostic Clinical Dossier &bull; Chakshuh Autonomous Diagnostics
+                    <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider flex items-center space-x-2">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Bilateral Tele-Ocular Dossier &bull; Comprehensive OD &amp; OS Assessment</span>
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-slate-100 mt-0.5">
-                      {patientData.name} ({patientData.gender}, {patientData.age}y) &bull; Eye: {patientData.eye}
+                      {patientData.name} ({patientData.gender}, {patientData.age}y)
                     </h3>
                     <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-3">
                       <span>MRN: <strong className="text-slate-200 font-mono">{patientData.patientId}</strong></span>
@@ -759,41 +875,71 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                     </div>
                   </div>
 
-                  {/* Primary Diagnosis Badge */}
-                  <div className="flex flex-col items-end">
-                    <span className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border uppercase tracking-wider shadow-sm ${
-                      pipelineResult.icdr_grade === 0 
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
-                        : (pipelineResult.referable_dr 
-                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
-                            : 'bg-blue-500/20 text-blue-300 border-blue-500/40')
-                    }`}>
-                      {pipelineResult.class_info?.name || `Grade ${pipelineResult.icdr_grade}`}
-                    </span>
-                    <span className="text-[11px] text-slate-400 mt-1 font-mono">
-                      Confidence: <strong>{(pipelineResult.confidence * 100).toFixed(1)}%</strong>
-                    </span>
+                  {/* Overall Patient Diagnosis & Quick Eye Badges */}
+                  <div className="flex flex-col items-end space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border uppercase tracking-wider shadow-sm ${
+                        overallGrade === 0 
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                          : (overallReferable 
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
+                              : 'bg-blue-500/20 text-blue-300 border-blue-500/40')
+                      }`}>
+                        Patient Overall: Grade {overallGrade} ({overallClassInfo.name})
+                      </span>
+                    </div>
+
+                    {/* Bilateral Eye Switcher Pills */}
+                    <div className="flex items-center space-x-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchExaminedEye('OD')}
+                        className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all ${
+                          patientData.eye === 'OD'
+                            ? 'bg-cyan-500 text-slate-950 shadow'
+                            : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-300"></span>
+                        <span>OD: {odResult ? `Grade ${odResult.icdr_grade}` : (odImageSrc ? 'OD Ready' : 'Empty')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchExaminedEye('OS')}
+                        className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all ${
+                          patientData.eye === 'OS'
+                            ? 'bg-sky-500 text-slate-950 shadow'
+                            : 'text-slate-400 hover:text-sky-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-300"></span>
+                        <span>OS: {osResult ? `Grade ${osResult.icdr_grade}` : (osImageSrc ? 'OS Ready' : 'Empty')}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Triage & Clinical Recommendation Alert Banner */}
                 <div className={`p-4 rounded-xl border flex items-start space-x-3 ${
-                  pipelineResult.referable_dr 
+                  overallReferable 
                     ? 'bg-rose-950/40 border-rose-500/50 text-rose-200' 
                     : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
                 }`}>
                   <Activity className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <div className="font-bold text-xs uppercase tracking-wider">
-                      {pipelineResult.referable_dr ? 'Referral Protocol Required' : 'Screening Cleared'} &bull; {pipelineResult.class_info?.action}
+                      {overallReferable ? 'Referral Protocol Required' : 'Screening Cleared'} &bull; {overallClassInfo.action}
                     </div>
                     <p className="text-xs text-slate-300">
-                      {pipelineResult.dme_risk && (
+                      {overallDmeRisk && (
                         <strong className="text-amber-300 block mb-1">
-                          ⚠️ Diabetic Macular Edema (DME) High Risk: Hard exudate clusters detected within 1 Disc Diameter of the central fovea.
+                          ⚠️ Diabetic Macular Edema (DME) Risk Detected: Exudates present near central macular vision.
                         </strong>
                       )}
-                      {pipelineResult.etdrs_421?.risk_profile || 'Routine protocol based on International Clinical Diabetic Retinopathy (ICDR) standard.'}
+                      {odResult && osResult 
+                        ? `Bilateral Evaluation Complete: Right Eye staged at Grade ${odResult.icdr_grade} (${odResult.class_info?.name}), Left Eye staged at Grade ${osResult.icdr_grade} (${osResult.class_info?.name}). Overall patient care plan governed by worse eye.`
+                        : (pipelineResult?.etdrs_421?.risk_profile || 'Routine protocol based on International Clinical Diabetic Retinopathy (ICDR) standard.')}
                     </p>
                   </div>
                 </div>
@@ -825,9 +971,14 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                           <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
                         </span>
                         <div className="flex items-center space-x-2">
+                          {odResult && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                              Grade {odResult.icdr_grade}
+                            </span>
+                          )}
                           {patientData.eye === 'OD' ? (
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                              Active Examined Eye
+                              Active Eye
                             </span>
                           ) : (
                             odImageSrc && (
@@ -836,7 +987,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                                 onClick={() => handleSwitchExaminedEye('OD')}
                                 className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
                               >
-                                <span>Analyze Right Eye (OD)</span>
+                                <span>{odResult ? 'View OD' : 'Analyze OD'}</span>
                                 <ChevronRight className="h-3 w-3" />
                               </button>
                             )
@@ -859,6 +1010,11 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                             <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
                               OD &bull; 45° FOV
                             </div>
+                            {odResult && (
+                              <div className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-cyan-300 font-mono border border-cyan-500/30">
+                                {odResult.dme_risk ? '⚠️ DME Alert' : '✓ Spared'}
+                              </div>
+                            )}
                           </>
                         ) : (
                           <label className="flex flex-col items-center justify-center space-y-2 text-slate-500 cursor-pointer hover:text-slate-300 p-4 text-center">
@@ -869,6 +1025,14 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                           </label>
                         )}
                       </div>
+                      {odResult && (
+                        <div className="mt-2 text-[10px] text-slate-400 font-mono flex items-center justify-between px-1">
+                          <span>MAs: {odResult.lesions?.ma_count ?? 0} &bull; Hems: {odResult.lesions?.hem_count ?? 0}</span>
+                          <span className={odResult.referable_dr ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+                            {odResult.referable_dr ? 'Referable' : 'Routine'}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Left Eye (OS) */}
@@ -883,9 +1047,14 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                           <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
                         </span>
                         <div className="flex items-center space-x-2">
+                          {osResult && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                              Grade {osResult.icdr_grade}
+                            </span>
+                          )}
                           {patientData.eye === 'OS' ? (
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/40">
-                              Active Examined Eye
+                              Active Eye
                             </span>
                           ) : (
                             osImageSrc && (
@@ -894,7 +1063,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                                 onClick={() => handleSwitchExaminedEye('OS')}
                                 className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
                               >
-                                <span>Analyze Left Eye (OS)</span>
+                                <span>{osResult ? 'View OS' : 'Analyze OS'}</span>
                                 <ChevronRight className="h-3 w-3" />
                               </button>
                             )
@@ -917,6 +1086,11 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                             <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
                               OS &bull; 45° FOV
                             </div>
+                            {osResult && (
+                              <div className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-sky-300 font-mono border border-sky-500/30">
+                                {osResult.dme_risk ? '⚠️ DME Alert' : '✓ Spared'}
+                              </div>
+                            )}
                           </>
                         ) : (
                           <label className="flex flex-col items-center justify-center space-y-2 text-slate-500 cursor-pointer hover:text-slate-300 p-4 text-center">
@@ -927,6 +1101,14 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                           </label>
                         )}
                       </div>
+                      {osResult && (
+                        <div className="mt-2 text-[10px] text-slate-400 font-mono flex items-center justify-between px-1">
+                          <span>MAs: {osResult.lesions?.ma_count ?? 0} &bull; Hems: {osResult.lesions?.hem_count ?? 0}</span>
+                          <span className={osResult.referable_dr ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+                            {osResult.referable_dr ? 'Referable' : 'Routine'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1077,6 +1259,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                 <div className="space-y-4">
                   <XAIReport 
                     result={pipelineResult} 
+                    odResult={odResult}
+                    osResult={osResult}
                     imageUrl={currentImage}
                     odImageUrl={odImageSrc}
                     osImageUrl={osImageSrc}

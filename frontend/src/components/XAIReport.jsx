@@ -24,7 +24,9 @@ import {
 import { getPlainLanguageSummary } from '../utils/reportSummary';
 
 export default function XAIReport({ 
-  result, 
+  result = null,
+  odResult = null,
+  osResult = null,
   imageUrl = null,
   odImageUrl = null,
   osImageUrl = null,
@@ -33,14 +35,64 @@ export default function XAIReport({
   siteName = 'PHC Block 4, Ratnagiri District Hospital',
   activeEye = 'OD'
 }) {
-  if (!result || result.short_circuited) return null;
+  // Resolve individual and bilateral results
+  const effectiveOdResult = odResult || (activeEye === 'OD' ? result : null);
+  const effectiveOsResult = osResult || (activeEye === 'OS' ? result : null);
+  const primaryResult = (activeEye === 'OS' ? effectiveOsResult : effectiveOdResult) || effectiveOdResult || effectiveOsResult || result;
 
-  const icdr_grade = result.icdr_grade ?? 0;
-  const class_info = result.class_info || { name: 'No DR', action: 'Routine annual screening' };
-  const confidence = result.confidence ?? 0.95;
-  const referable_dr = result.referable_dr ?? (icdr_grade >= 2);
-  const dme_risk = result.dme_risk ?? false;
-  const lesions = result.lesions || {
+  if (!primaryResult || primaryResult.short_circuited) return null;
+
+  const hasBothEyes = Boolean(effectiveOdResult && effectiveOsResult);
+
+  const odGrade = effectiveOdResult ? (effectiveOdResult.icdr_grade ?? 0) : null;
+  const osGrade = effectiveOsResult ? (effectiveOsResult.icdr_grade ?? 0) : null;
+
+  const overallGrade = Math.max(
+    effectiveOdResult?.icdr_grade ?? 0,
+    effectiveOsResult?.icdr_grade ?? 0,
+    result?.icdr_grade ?? 0
+  );
+
+  const overallReferable = Boolean(
+    effectiveOdResult?.referable_dr ||
+    effectiveOsResult?.referable_dr ||
+    result?.referable_dr ||
+    overallGrade >= 2
+  );
+
+  const overallDmeRisk = Boolean(
+    effectiveOdResult?.dme_risk ||
+    effectiveOsResult?.dme_risk ||
+    result?.dme_risk
+  );
+
+  const ICDR_STAGE_NAMES = {
+    0: 'No DR',
+    1: 'Mild NPDR',
+    2: 'Moderate NPDR',
+    3: 'Severe NPDR',
+    4: 'Proliferative DR (PDR)'
+  };
+
+  const ICDR_ACTIONS = {
+    0: 'Routine annual tele-screening in 12 months',
+    1: 'Strict glycemic & BP control; repeat screening in 6-12 months',
+    2: 'Referral to Ophthalmologist within 4-6 weeks for clinical evaluation',
+    3: 'Urgent referral to Vitreoretinal Specialist within 48-72 hours',
+    4: 'Immediate intervention (Laser PRP / Anti-VEGF) within 24-48 hours'
+  };
+
+  const overallClassInfo = {
+    name: ICDR_STAGE_NAMES[overallGrade] || primaryResult.class_info?.name || 'No DR',
+    action: ICDR_ACTIONS[overallGrade] || primaryResult.class_info?.action || 'Routine annual screening'
+  };
+
+  const icdr_grade = overallGrade;
+  const class_info = overallClassInfo;
+  const confidence = primaryResult.confidence ?? 0.95;
+  const referable_dr = overallReferable;
+  const dme_risk = overallDmeRisk;
+  const lesions = primaryResult.lesions || {
     ma_count: 0,
     hem_count: 0,
     exudate_area_pct: 0.0,
@@ -48,12 +100,12 @@ export default function XAIReport({
     fovea_exudate_dist_dd: 3.5,
     disc_to_lesion_dist_dd: 1.42
   };
-  const anatomy = result.anatomy || {
+  const anatomy = primaryResult.anatomy || {
     disc: { x: 0.78, y: 0.50, radius: 0.09 },
     fovea: { x: 0.44, y: 0.52, radius: 0.04 }
   };
-  const payload_size_kb = result.payload_size_kb ?? 3.2;
-  const total_time_ms = result.total_time_ms ?? 185;
+  const payload_size_kb = primaryResult.payload_size_kb ?? 3.2;
+  const total_time_ms = primaryResult.total_time_ms ?? 185;
 
   // Bilateral image resolution
   const effectiveOdImage = odImageUrl || (activeEye === 'OD' ? imageUrl : null) || '/samples/fundus_001_Grade_0_No_DR.png';
@@ -70,14 +122,14 @@ export default function XAIReport({
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     site: patientData?.center || siteName || 'PHC Block 4, Ratnagiri District Hospital',
     clinician: 'Dr. S. Sharma, MD (Ophthalmology)',
-    eyeTested: patientData?.eye || activeEye || (anatomy.eye_side === 'OS' ? 'OS' : 'OD'),
+    eyeTested: hasBothEyes ? 'Bilateral (Both Eyes OD + OS)' : (patientData?.eye || activeEye || (anatomy.eye_side === 'OS' ? 'OS' : 'OD')),
     clinicalNotes: patientData?.diabetesType 
       ? `Reported: ${patientData.diabetesType}. Routine tele-ophthalmology screening at ${patientData.center || siteName}.`
       : 'Known Type 2 Diabetes Mellitus x 12 yrs. Recent HbA1c: 8.4%. BP: 136/84 mmHg. Presenting for automated tele-ophthalmology screening.',
   });
 
   // Generate plain-language summary for patient understanding
-  const plainSummary = getPlainLanguageSummary(result, patientDetails.eyeTested);
+  const plainSummary = getPlainLanguageSummary(effectiveOdResult, effectiveOsResult, patientDetails.eyeTested);
 
   const handlePrintTrigger = () => {
     setIsPatientModalOpen(true);
@@ -245,7 +297,7 @@ export default function XAIReport({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Right Eye (OD) */}
           <div className={`p-3 rounded-xl border transition-all ${
-            patientDetails.eyeTested === 'OD'
+            patientDetails.eyeTested === 'OD' || hasBothEyes
               ? 'bg-slate-900 border-cyan-500/50 shadow-md shadow-cyan-950/40 ring-1 ring-cyan-500/30'
               : 'bg-slate-900/60 border-slate-800'
           }`}>
@@ -255,9 +307,9 @@ export default function XAIReport({
                 <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
               </span>
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                patientDetails.eyeTested === 'OD' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-800 text-slate-400'
+                effectiveOdResult ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-800 text-slate-400'
               }`}>
-                {patientDetails.eyeTested === 'OD' ? 'Active Examined Eye' : 'Contralateral Baseline'}
+                {effectiveOdResult ? `Grade ${effectiveOdResult.icdr_grade}: ${effectiveOdResult.class_info?.name || 'Graded'}` : 'Not Scanned'}
               </span>
             </div>
             <div className="h-48 sm:h-56 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
@@ -269,12 +321,27 @@ export default function XAIReport({
               <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
                 OD &bull; 45° FOV
               </div>
+              {effectiveOdResult && (
+                <div className={`absolute top-2 right-2 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-mono border ${
+                  effectiveOdResult.dme_risk ? 'bg-amber-950/85 text-amber-300 border-amber-500/40' : 'bg-slate-950/85 text-emerald-300 border-emerald-500/30'
+                }`}>
+                  {effectiveOdResult.dme_risk ? '⚠️ DME Alert' : '✓ DME Spared'}
+                </div>
+              )}
             </div>
+            {effectiveOdResult && (
+              <div className="mt-2 text-[10px] text-slate-400 font-mono flex items-center justify-between px-1">
+                <span>MAs: {effectiveOdResult.lesions?.ma_count ?? 0} &bull; Hems: {effectiveOdResult.lesions?.hem_count ?? 0} &bull; Exudates: {(effectiveOdResult.lesions?.exudate_area_pct ?? 0).toFixed(2)}%</span>
+                <span className={effectiveOdResult.referable_dr ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+                  {effectiveOdResult.referable_dr ? 'Referable' : 'Routine'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Left Eye (OS) */}
           <div className={`p-3 rounded-xl border transition-all ${
-            patientDetails.eyeTested === 'OS'
+            patientDetails.eyeTested === 'OS' || hasBothEyes
               ? 'bg-slate-900 border-sky-500/50 shadow-md shadow-sky-950/40 ring-1 ring-sky-500/30'
               : 'bg-slate-900/60 border-slate-800'
           }`}>
@@ -284,9 +351,9 @@ export default function XAIReport({
                 <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
               </span>
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                patientDetails.eyeTested === 'OS' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40' : 'bg-slate-800 text-slate-400'
+                effectiveOsResult ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40' : 'bg-slate-800 text-slate-400'
               }`}>
-                {patientDetails.eyeTested === 'OS' ? 'Active Examined Eye' : 'Contralateral Baseline'}
+                {effectiveOsResult ? `Grade ${effectiveOsResult.icdr_grade}: ${effectiveOsResult.class_info?.name || 'Graded'}` : 'Not Scanned'}
               </span>
             </div>
             <div className="h-48 sm:h-56 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
@@ -298,7 +365,22 @@ export default function XAIReport({
               <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
                 OS &bull; 45° FOV
               </div>
+              {effectiveOsResult && (
+                <div className={`absolute top-2 right-2 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-mono border ${
+                  effectiveOsResult.dme_risk ? 'bg-amber-950/85 text-amber-300 border-amber-500/40' : 'bg-slate-950/85 text-emerald-300 border-emerald-500/30'
+                }`}>
+                  {effectiveOsResult.dme_risk ? '⚠️ DME Alert' : '✓ DME Spared'}
+                </div>
+              )}
             </div>
+            {effectiveOsResult && (
+              <div className="mt-2 text-[10px] text-slate-400 font-mono flex items-center justify-between px-1">
+                <span>MAs: {effectiveOsResult.lesions?.ma_count ?? 0} &bull; Hems: {effectiveOsResult.lesions?.hem_count ?? 0} &bull; Exudates: {(effectiveOsResult.lesions?.exudate_area_pct ?? 0).toFixed(2)}%</span>
+                <span className={effectiveOsResult.referable_dr ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
+                  {effectiveOsResult.referable_dr ? 'Referable' : 'Routine'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -630,21 +712,26 @@ export default function XAIReport({
                   <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
                 </span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
-                  patientDetails.eyeTested === 'OD' ? 'bg-cyan-100 text-cyan-800 border border-cyan-300' : 'bg-slate-100 text-slate-600'
+                  effectiveOdResult ? 'bg-cyan-100 text-cyan-800 border border-cyan-300' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {patientDetails.eyeTested === 'OD' ? 'Examined / Analyzed' : 'Contralateral Reference'}
+                  {effectiveOdResult ? `Grade ${effectiveOdResult.icdr_grade}: ${effectiveOdResult.class_info?.name || 'Graded'}` : 'Not Scanned'}
                 </span>
               </div>
-              <div className="w-full h-36 sm:h-44 bg-black rounded-md overflow-hidden flex items-center justify-center border border-slate-200">
+              <div className="w-full h-36 sm:h-44 bg-black rounded-md overflow-hidden flex items-center justify-center border border-slate-200 relative">
                 <img 
                   src={effectiveOdImage} 
                   alt="Right Eye (OD) Retinal Fundus" 
                   className="h-full w-full object-contain"
                 />
+                {effectiveOdResult && (
+                  <div className="absolute top-1.5 right-1.5 bg-slate-900/90 text-[9px] font-bold text-cyan-200 px-1.5 py-0.5 rounded border border-cyan-500/40">
+                    Grade {effectiveOdResult.icdr_grade}
+                  </div>
+                )}
               </div>
-              <div className="w-full text-[10px] text-slate-500 mt-1 flex justify-between">
-                <span>Macula &amp; Disc Focused</span>
-                <span className="font-mono">FOV: 45° &bull; Gradable</span>
+              <div className="w-full text-[10px] text-slate-600 mt-1 flex justify-between">
+                <span>{effectiveOdResult ? `MAs: ${effectiveOdResult.lesions?.ma_count ?? 0} | Hems: ${effectiveOdResult.lesions?.hem_count ?? 0}` : 'Macula & Disc Focused'}</span>
+                <span className="font-semibold">{effectiveOdResult ? (effectiveOdResult.dme_risk ? '⚠️ DME Risk' : 'DME Spared') : 'Gradable'}</span>
               </div>
             </div>
 
@@ -656,21 +743,26 @@ export default function XAIReport({
                   <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
                 </span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
-                  patientDetails.eyeTested === 'OS' ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-600'
+                  effectiveOsResult ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {patientDetails.eyeTested === 'OS' ? 'Examined / Analyzed' : 'Contralateral Reference'}
+                  {effectiveOsResult ? `Grade ${effectiveOsResult.icdr_grade}: ${effectiveOsResult.class_info?.name || 'Graded'}` : 'Not Scanned'}
                 </span>
               </div>
-              <div className="w-full h-36 sm:h-44 bg-black rounded-md overflow-hidden flex items-center justify-center border border-slate-200">
+              <div className="w-full h-36 sm:h-44 bg-black rounded-md overflow-hidden flex items-center justify-center border border-slate-200 relative">
                 <img 
                   src={effectiveOsImage} 
                   alt="Left Eye (OS) Retinal Fundus" 
                   className="h-full w-full object-contain"
                 />
+                {effectiveOsResult && (
+                  <div className="absolute top-1.5 right-1.5 bg-slate-900/90 text-[9px] font-bold text-sky-200 px-1.5 py-0.5 rounded border border-sky-500/40">
+                    Grade {effectiveOsResult.icdr_grade}
+                  </div>
+                )}
               </div>
-              <div className="w-full text-[10px] text-slate-500 mt-1 flex justify-between">
-                <span>Macula &amp; Disc Focused</span>
-                <span className="font-mono">FOV: 45° &bull; Gradable</span>
+              <div className="w-full text-[10px] text-slate-600 mt-1 flex justify-between">
+                <span>{effectiveOsResult ? `MAs: ${effectiveOsResult.lesions?.ma_count ?? 0} | Hems: ${effectiveOsResult.lesions?.hem_count ?? 0}` : 'Macula & Disc Focused'}</span>
+                <span className="font-semibold">{effectiveOsResult ? (effectiveOsResult.dme_risk ? '⚠️ DME Risk' : 'DME Spared') : 'Gradable'}</span>
               </div>
             </div>
           </div>
@@ -682,11 +774,13 @@ export default function XAIReport({
             <div className={`px-3 py-1.5 rounded-lg text-white font-black text-sm uppercase tracking-wide ${
               icdr_grade >= 3 ? 'bg-rose-600' : (icdr_grade === 2 ? 'bg-amber-600' : (icdr_grade === 1 ? 'bg-blue-600' : 'bg-emerald-600'))
             }`}>
-              Grade {icdr_grade}: {class_info.name}
+              Patient Overall: Grade {icdr_grade} ({class_info.name})
             </div>
             <div>
               <div className="text-xs font-bold text-slate-900">
-                Confidence: {(confidence * 100).toFixed(1)}% &bull; Staged by Deep Feature Fusion (CNN + 18-d Lesion Vector)
+                {hasBothEyes
+                  ? `Bilateral Evaluation: OD Grade ${effectiveOdResult.icdr_grade} • OS Grade ${effectiveOsResult.icdr_grade} (Staged by worse eye)`
+                  : `Confidence: ${(confidence * 100).toFixed(1)}% • Staged by Deep Feature Fusion`}
               </div>
               <div className="text-[11px] text-slate-600">
                 Action: {class_info.action}
