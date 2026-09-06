@@ -2,7 +2,8 @@ import React from 'react';
 import { 
   ArrowRight, 
   ShieldCheck, 
-  Eye 
+  Eye,
+  Cloud
 } from 'lucide-react';
 
 /**
@@ -11,7 +12,7 @@ import {
  * - Left: Image of clinic where doctor checking eye
  * - Right: Details about DR + [Start] button
  */
-export default function ClinicalLandingView({ onStartScreening }) {
+export default function ClinicalLandingView({ onStartScreening, onOpenRegistry }) {
   return (
     <div className="space-y-8 max-w-7xl mx-auto py-2 sm:py-6">
       {/* Hero Split Section */}
@@ -76,7 +77,7 @@ export default function ClinicalLandingView({ onStartScreening }) {
             </p>
           </div>
 
-          {/* High-Impact Action Button: [Start] matching sketch */}
+          {/* High-Impact Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <button
               onClick={onStartScreening}
@@ -86,6 +87,16 @@ export default function ClinicalLandingView({ onStartScreening }) {
               <span>Start Patient Screening</span>
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </button>
+
+            {onOpenRegistry && (
+              <button
+                onClick={onOpenRegistry}
+                className="px-6 py-4 rounded-xl font-semibold text-sm bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 transition-all flex items-center justify-center space-x-2.5 shadow-lg"
+              >
+                <Cloud className="h-4 w-4 text-cyan-400" />
+                <span>Search Cloud EHR Registry</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

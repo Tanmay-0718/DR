@@ -40,6 +40,7 @@
    - [4-Step Patient Intake & Diagnostic Screening Workflow](#4-step-patient-intake--diagnostic-screening-workflow)
    - [Password-Protected Developer Mode Relocation (`DR071104-A`)](#password-protected-developer-mode-relocation-dr071104-a)
    - [Three Ergonomic Themes & WCAG AAA High-Contrast White Theme](#three-ergonomic-themes--wcag-aaa-high-contrast-white-theme)
+   - [Pluggable Multi-Center Cloud EHR & Enterprise Integration Architecture](#pluggable-multi-center-cloud-ehr--enterprise-integration-architecture)
 7. [Repository File Structure](#7-repository-file-structure)
 8. [Installation & Setup Guide](#8-installation--setup-guide)
 9. [Execution & Reproduction Instructions](#9-execution--reproduction-instructions)
@@ -321,6 +322,22 @@ To protect clinical health workers from overwhelming engineering knobs while pre
 2. **Dark Slate**: Default cyber-clinical low-glare dark mode optimized for dim fundus screening rooms.
 3. **OLED Pitch Black**: Pure black background (`#000000`) designed for maximum energy efficiency on battery-powered mobile tablets and OLED screens.
 
+### Pluggable Multi-Center Cloud EHR & Enterprise Integration Architecture
+Sunetra features an **Open Enterprise Cloud Architecture** designed for zero-friction handover to healthcare systems, hospital conglomerates, and state telemedicine missions:
+1. **Multi-Center Central Registry**: Stores and indexes screening records across diverse clinical tiers—including rural Primary Health Centers (PHCs), Community Health Centers (CHCs), mobile eye vans, and tertiary eye hospitals.
+2. **Dedicated Cloud Patient Registry Panel**:
+   - Real-time search across patients by Name, MRN ID (`SUN-2026-XXXX`), Contact, or Center.
+   - Filter by ICDR severity grade (Grades 0 to 4), Examined Eye (**OD** - Oculus Dexter / **OS** - Oculus Sinister), and referral urgency.
+   - Expandable **Clinical Dossier Slide-Over** displaying full patient demographics, diabetes history, 18 handcrafted clinical biomarkers, ETDRS 4-2-1 rule criteria, and raw encrypted 3.2 KB telemetry packets.
+3. **Pluggable Cloud Adapter (`frontend/src/services/cloudEhrService.js`)**:
+   - Ships with an offline-first resilient storage cache and simulated high-availability cloud gateway.
+   - Features open extension hooks to connect to any custom enterprise backend:
+     - **Custom REST / GraphQL APIs** (FastAPI, Node.js, Spring Boot, ASP.NET)
+     - **HL7 FHIR R4 Gateways** (National Health Stack / Ayushman Bharat ABDM, HAPI FHIR, Google Cloud Healthcare API, Azure Health Data Services)
+     - **Cloud BaaS** (Supabase, Firebase Firestore)
+     - **AWS HealthLake & S3 Telemetry Buckets** (AES-256 encrypted at rest)
+   - Built-in **Cloud Services Configuration Modal** allowing administrators to enter endpoint URLs, bearer tokens, and test live connection latency with one click.
+
 ---
 
 ## 7. Repository File Structure
@@ -365,7 +382,10 @@ DR/
 │       │   ├── SettingsView.jsx                               # Preferences hub & passcode-gated Dev Console
 │       │   ├── PitchDeckModal.jsx                             # Executive SIH 2026 presentation modal
 │       │   ├── DeveloperUnlockModal.jsx                       # Developer passcode authentication modal
+│       │   ├── CloudPatientRegistry.jsx                       # Central Cloud EHR multi-center search & patient dossiers
 │       │   └── ErrorBoundary.jsx                              # React fault tolerance boundary
+│       ├── services/
+│       │   └── cloudEhrService.js                             # Pluggable enterprise cloud EHR adapter, FHIR export & REST hooks
 │       └── utils/
 │           ├── imageProcessing.js                             # Client-side canvas image processing & lesion segmentation
 │           └── audioAlerts.js                                 # Clinical auditory feedback alerts

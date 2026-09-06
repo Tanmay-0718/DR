@@ -21,7 +21,8 @@ import {
   Terminal,
   Home,
   FileText,
-  Sparkles
+  Sparkles,
+  Cloud
 } from 'lucide-react';
 
 export default function NavigationDrawer({ 
@@ -218,6 +219,33 @@ export default function NavigationDrawer({
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                 </button>
+
+                {/* 3. Central Cloud Patient Registry (EHR) */}
+                <button
+                  onClick={() => {
+                    if (setClinicalView) setClinicalView('registry');
+                    onClose();
+                  }}
+                  className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between group ${
+                    clinicalView === 'registry'
+                      ? 'bg-slate-800 text-cyan-400 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
+                      : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${clinicalView === 'registry' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
+                      <Cloud className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-100 flex items-center space-x-1.5">
+                        <span>Cloud Patient Registry</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">Multi-Center</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Search patient records, cross-center history &amp; FHIR</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                </button>
               </>
             ) : (
               <>
@@ -354,6 +382,30 @@ export default function NavigationDrawer({
                         <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300">12 Slides</span>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-0.5">SIH 2026 Grand Finale submission blueprint</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* 7. Central Cloud Patient Registry (Dev) */}
+                <button
+                  onClick={() => { setActiveTab('registry'); onClose(); }}
+                  className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between group ${
+                    activeTab === 'registry'
+                      ? 'bg-slate-800 text-cyan-400 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
+                      : 'bg-slate-900/60 hover:bg-slate-800/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${activeTab === 'registry' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
+                      <Cloud className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-100 flex items-center space-x-1.5">
+                        <span>Cloud Patient Registry</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">EHR</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Multi-center database, FHIR R4 &amp; open cloud hook</p>
                     </div>
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />

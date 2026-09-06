@@ -6,7 +6,8 @@ import {
   Unlock,
   Terminal,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Cloud
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -72,6 +73,26 @@ export default function Navbar({
                 </button>
               </div>
             )}
+
+            {/* Central Cloud Registry Quick Access */}
+            <button
+              onClick={() => {
+                if (isDevMode) {
+                  setActiveTab('registry');
+                } else if (setClinicalView) {
+                  setClinicalView('registry');
+                }
+              }}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                (!isDevMode && clinicalView === 'registry') || (isDevMode && activeTab === 'registry')
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm ring-1 ring-cyan-500/30'
+                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
+              }`}
+              title="Open Central Cloud Patient Registry (Search across centers)"
+            >
+              <Cloud className="h-3.5 w-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">Cloud Registry</span>
+            </button>
 
             {/* Edge Online Badge */}
             <div className="hidden sm:flex items-center space-x-2 font-mono text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-lg shadow-sm">

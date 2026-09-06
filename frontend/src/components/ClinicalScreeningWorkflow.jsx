@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Upload, 
   Eye, 
@@ -18,14 +18,17 @@ import {
   Info,
   Clock,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Cloud,
+  Database
 } from 'lucide-react';
 import { SAMPLE_CATALOG, runFullPipeline } from '../utils/imageProcessing';
 import SegmentationViewer from './SegmentationViewer';
 import GradingCard from './GradingCard';
 import XAIReport from './XAIReport';
+import cloudEhrService from '../services/cloudEhrService';
 
-export default function ClinicalScreeningWorkflow({ onBackToHome }) {
+export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLanding, onOpenRegistry }) {
   // Patient Demographics State
   const [patientData, setPatientData] = useState({
     name: 'Ramesh Sharma',
@@ -53,6 +56,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
   const [clinicianConfirmedCWS, setClinicianConfirmedCWS] = useState(null);
   const [clinicianConfirmedIRMA, setClinicianConfirmedIRMA] = useState(null);
   const [clinicianConfirmedVB, setClinicianConfirmedVB] = useState(null);
+  const [cloudSynced, setCloudSynced] = useState(false);
 
   // Generate random Patient ID
   const handleGenerateId = () => {
@@ -61,6 +65,17 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
   };
 
   const currentImage = selectedSample ? selectedSample.path : uploadedImageSrc;
+
+  // Auto-sync patient examination record to central Cloud EHR
+  useEffect(() => {
+    if (pipelineResult && pipelineResult.gate0?.valid !== false && !cloudSynced) {
+      cloudEhrService.savePatientRecord(patientData, {
+        ...pipelineResult,
+        imageSrc: currentImage
+      });
+      setCloudSynced(true);
+    }
+  }, [pipelineResult, cloudSynced, patientData, currentImage]);
 
   // Execute pipeline
   const processImage = async (src, sample = null, fName = '', overrideOpts = {}) => {
@@ -258,6 +273,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
     setClinicianConfirmedCWS(null);
     setClinicianConfirmedIRMA(null);
     setClinicianConfirmedVB(null);
+    setCloudSynced(false);
     handleGenerateId();
   };
 
@@ -665,7 +681,24 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
                     <span>Telemetry Packet: 3.2 KB &bull; SHA-256 Validated</span>
                   </div>
 
-                  <div className="flex items-center space-x-2.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Cloud EHR Status Badge */}
+                    <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
+                      <Cloud className="h-3.5 w-3.5 text-emerald-400" />
+                      <span>Cloud Synced</span>
+                    </div>
+
+                    {onOpenRegistry && (
+                      <button
+                        onClick={onOpenRegistry}
+                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                        title="View central registry across all centers"
+                      >
+                        <Database className="h-3.5 w-3.5 text-cyan-400" />
+                        <span>Central Registry</span>
+                      </button>
+                    )}
+
                     <button
                       onClick={() => setShowPrintReport(!showPrintReport)}
                       className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md shadow-cyan-600/20 transition-all flex items-center space-x-2"

@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ClinicalEntranceAnimation from './components/ClinicalEntranceAnimation';
 import ClinicalLandingView from './components/ClinicalLandingView';
 import ClinicalScreeningWorkflow from './components/ClinicalScreeningWorkflow';
+import CloudPatientRegistry from './components/CloudPatientRegistry';
 import DeveloperUnlockModal from './components/DeveloperUnlockModal';
 import { ShieldCheck, HeartPulse, Terminal, Lock, Sparkles } from 'lucide-react';
 
@@ -127,13 +128,19 @@ export default function App() {
                   onUnlockDevMode={handleUnlockDevMode}
                   onLockDevMode={handleLockDevMode}
                 />
+              ) : clinicalView === 'registry' ? (
+                <CloudPatientRegistry 
+                  onNavigateToScreening={() => setClinicalView('screening')}
+                />
               ) : clinicalView === 'landing' ? (
                 <ClinicalLandingView 
                   onStartScreening={() => setClinicalView('screening')}
+                  onOpenRegistry={() => setClinicalView('registry')}
                 />
               ) : (
                 <ClinicalScreeningWorkflow 
                   onBackToLanding={() => setClinicalView('landing')}
+                  onOpenRegistry={() => setClinicalView('registry')}
                 />
               )
             ) : (
@@ -174,6 +181,10 @@ export default function App() {
                 {/* Developer Subview */}
                 {activeTab === 'pipeline' ? (
                   <PipelineDemo />
+                ) : activeTab === 'registry' ? (
+                  <CloudPatientRegistry 
+                    onNavigateToScreening={() => setActiveTab('pipeline')}
+                  />
                 ) : (
                   <SettingsView 
                     theme={theme} 
