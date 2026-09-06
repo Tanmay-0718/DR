@@ -20,7 +20,6 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { SAMPLE_CATALOG, runFullPipeline } from '../utils/imageProcessing';
-import IQAGate from './IQAGate';
 import SegmentationViewer from './SegmentationViewer';
 import XAIReport from './XAIReport';
 
@@ -326,11 +325,6 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
       {/* DIAGNOSTIC RESULTS DISPLAY */}
       {pipelineResult && !isProcessing && (
         <div className="space-y-6">
-          {/* 1. IQA & Gatekeeper Gate Summary */}
-          <div className="no-print">
-            <IQAGate iqaData={pipelineResult} />
-          </div>
-
           {/* IF IMAGE IS UNGRADABLE (e.g. Non-fundus scenery / blur), SHOW REJECTION & RE-TRY */}
           {!pipelineResult.is_gradable ? (
             <div className="no-print p-6 rounded-2xl bg-rose-950/30 border border-rose-500/40 text-center space-y-4">
