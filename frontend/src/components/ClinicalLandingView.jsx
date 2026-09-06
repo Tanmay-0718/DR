@@ -2,8 +2,7 @@ import React from 'react';
 import { 
   ArrowRight, 
   ShieldCheck, 
-  Eye, 
-  Lock 
+  Eye 
 } from 'lucide-react';
 
 /**
@@ -12,7 +11,7 @@ import {
  * - Left: Image of clinic where doctor checking eye
  * - Right: Details about DR + [Start] button
  */
-export default function ClinicalLandingView({ onStartScreening, onOpenDevLogin }) {
+export default function ClinicalLandingView({ onStartScreening }) {
   return (
     <div className="space-y-8 max-w-7xl mx-auto py-2 sm:py-6">
       {/* Hero Split Section */}
@@ -87,17 +86,6 @@ export default function ClinicalLandingView({ onStartScreening, onOpenDevLogin }
               <span>Start Patient Screening</span>
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </button>
-
-            {onOpenDevLogin && (
-              <button
-                onClick={onOpenDevLogin}
-                className="px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition-colors flex items-center justify-center space-x-1.5"
-                title="Unlock advanced engineering controls & benchmarks"
-              >
-                <Lock className="h-3.5 w-3.5 text-slate-500" />
-                <span>Site Support / Dev Access</span>
-              </button>
-            )}
           </div>
         </div>
       </div>

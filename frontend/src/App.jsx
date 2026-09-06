@@ -114,10 +114,22 @@ export default function App() {
             {/* GATED LOGIC: Standard Clinical Frontend vs Dev Engineering Layout */}
             {!isDevMode ? (
               /* DAILY CLINICAL USER FRONTEND */
-              clinicalView === 'landing' ? (
+              activeTab === 'settings' ? (
+                <SettingsView 
+                  theme={theme} 
+                  setTheme={setTheme} 
+                  activeSubTab="general"
+                  setActiveSubTab={(tab) => setActiveTab(tab)}
+                  onReturnToPipeline={() => {
+                    setActiveTab('pipeline');
+                  }}
+                  isDevMode={isDevMode}
+                  onUnlockDevMode={handleUnlockDevMode}
+                  onLockDevMode={handleLockDevMode}
+                />
+              ) : clinicalView === 'landing' ? (
                 <ClinicalLandingView 
                   onStartScreening={() => setClinicalView('screening')}
-                  onOpenDevLogin={() => setIsDevModalOpen(true)}
                 />
               ) : (
                 <ClinicalScreeningWorkflow 

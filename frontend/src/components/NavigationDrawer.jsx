@@ -218,31 +218,6 @@ export default function NavigationDrawer({
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                 </button>
-
-                {/* Restricted Developer Suite Trigger */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      onClose();
-                      if (onOpenDevLogin) onOpenDevLogin();
-                    }}
-                    className="w-full p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 hover:bg-amber-950/40 text-left transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-400 group-hover:scale-105 transition-transform">
-                        <Lock className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-xs text-amber-200 flex items-center space-x-1.5">
-                          <span>Developer Operations Console</span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">Protected</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Enter passcode to unlock SGD, Benchmarks &amp; SimEvents</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-amber-400/60 group-hover:translate-x-0.5 transition-transform" />
-                  </button>
-                </div>
               </>
             ) : (
               <>

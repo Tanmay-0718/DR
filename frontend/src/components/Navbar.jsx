@@ -58,7 +58,7 @@ export default function Navbar({
           {/* Right Actions: Dev Status & Menu */}
           <div className="flex items-center space-x-2.5 sm:space-x-3">
             {/* Dev Mode Active Status & Switcher */}
-            {isDevMode ? (
+            {isDevMode && (
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
@@ -71,18 +71,6 @@ export default function Navbar({
                   <span>Lock Dev</span>
                 </button>
               </div>
-            ) : (
-              /* Clinical Mode Quick Dev Login Trigger */
-              onOpenDevLogin && (
-                <button
-                  onClick={onOpenDevLogin}
-                  className="hidden md:flex items-center space-x-1 text-slate-500 hover:text-slate-300 text-xs px-2 py-1 rounded hover:bg-slate-800 transition-colors"
-                  title="Enter developer passcode to unlock full engineering console"
-                >
-                  <Lock className="h-3 w-3" />
-                  <span>Dev Access</span>
-                </button>
-              )
             )}
 
             {/* Edge Online Badge */}

@@ -194,7 +194,7 @@ export default function SettingsView({
                 className="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 transition-all shadow-sm"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to Clinical Pipeline</span>
+                <span>{isDevMode ? 'Back to Developer Pipeline' : 'Back to Clinical Portal'}</span>
               </button>
             )}
           </div>
