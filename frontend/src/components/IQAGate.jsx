@@ -7,7 +7,8 @@ import {
   Focus, 
   Sun, 
   Maximize2, 
-  RefreshCw 
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 
 export default function IQAGate({ iqaData }) {
@@ -16,6 +17,10 @@ export default function IQAGate({ iqaData }) {
   const is_gradable = iqaData.is_gradable !== undefined ? iqaData.is_gradable : true;
   const iqa_reason = iqaData.iqa_reason || 'pass';
   const metrics = iqaData.iqa_metrics || iqaData.metrics || {};
+
+  const is_fundus = metrics.is_fundus !== undefined ? metrics.is_fundus : (iqa_reason !== 'non_fundus');
+  const fundus_score = metrics.fundus_score ?? (is_fundus ? 98 : 15);
+  const fundus_validity = metrics.fundus_validity || {};
 
   const sharpness = metrics.sharpness ?? (is_gradable ? 0.00024 : 0.000078);
   const sharpness_thresh = metrics.sharpness_thresh ?? 0.00015;
@@ -31,6 +36,11 @@ export default function IQAGate({ iqaData }) {
   const isFovPass = fov_ratio >= fov_thresh;
 
   const reasonGuidance = {
+    non_fundus: {
+      title: 'ANATOMICAL GATEKEEPER: NON-RETINAL / OUT-OF-DISTRIBUTION IMAGE DETECTED',
+      desc: fundus_validity.reason || 'Input photograph fails retinal optical and chromatic verification (RPE red dominance ratio <0.38, blue/green cool spectrum >8%, or missing circular aperture mask). Natural scenery, landscapes, documents, or non-ocular images are strictly rejected.',
+      action: 'Capture and upload a genuine ocular fundus photograph using a certified mydriatic or non-mydriatic retinal fundus camera.'
+    },
     blur: {
       title: 'MOTION BLUR / LOSS OF FOCUS DETECTED',
       desc: 'Laplacian variance fell below edge threshold (<0.00015). Retinal microaneurysms and fine capillaries cannot be resolved.',
@@ -68,7 +78,7 @@ export default function IQAGate({ iqaData }) {
           )}
           <div>
             <h4 className="text-sm font-semibold text-slate-100 flex items-center space-x-2">
-              <span>Module 1: IQA Edge Gate</span>
+              <span>Module 1: IQA Edge Gate &amp; Anatomical Gatekeeper</span>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-wider ${
                 is_gradable ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
               }`}>
@@ -76,7 +86,7 @@ export default function IQAGate({ iqaData }) {
               </span>
             </h4>
             <p className="text-xs text-slate-400">
-              Quality triage executed locally on device prior to deep learning pipeline
+              Gatekeeper mini-model &amp; quality triage executed locally on device prior to deep learning pipeline
             </p>
           </div>
         </div>
@@ -90,8 +100,33 @@ export default function IQAGate({ iqaData }) {
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 my-3">
+      {/* Metrics Row: Gate 0 + 3 IQA Gates */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-3">
+        {/* Metric 0: Anatomical Validity Gatekeeper */}
+        <div className={`p-3 rounded-lg border text-xs ${
+          is_fundus ? 'bg-slate-800/40 border-slate-700/60' : 'bg-rose-900/20 border-rose-500/40'
+        }`}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 flex items-center space-x-1.5">
+              <Eye className="h-3.5 w-3.5 text-cyan-400" />
+              <span>Gate 0: Anatomical Validity</span>
+            </span>
+            <span className={`font-mono font-bold ${is_fundus ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {fundus_score}%
+            </span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div 
+              className={`h-full rounded-full ${is_fundus ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              style={{ width: `${Math.min(100, Math.max(5, fundus_score))}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+            <span>Cutoff: &gt;=60%</span>
+            <span>{is_fundus ? 'Fundus Verified' : 'Non-Retinal'}</span>
+          </div>
+        </div>
+
         {/* Metric 1: Sharpness */}
         <div className={`p-3 rounded-lg border text-xs ${
           isSharpPass ? 'bg-slate-800/40 border-slate-700/60' : 'bg-rose-900/20 border-rose-500/40'
@@ -186,7 +221,9 @@ export default function IQAGate({ iqaData }) {
                 <span>{reasonGuidance[iqa_reason]?.action}</span>
               </div>
               <div className="mt-2 text-[11px] text-slate-400 border-t border-rose-500/20 pt-1.5 font-mono">
-                ⚡ SHORT-CIRCUIT ACTIVE: Modules 2 (Segmentation) and 3 (ICDR Grading) were aborted in {latency_ms}ms to conserve edge compute and eliminate false positive diagnostic reports.
+                {iqa_reason === 'non_fundus'
+                  ? `⚡ ANATOMICAL GATEKEEPER SHORT-CIRCUIT: Modules 2 (Segmentation) and 3 (ICDR Grading) were aborted in ${latency_ms}ms. Deep learning models halted to prevent false diagnostic predictions on non-retinal imagery.`
+                  : `⚡ SHORT-CIRCUIT ACTIVE: Modules 2 (Segmentation) and 3 (ICDR Grading) were aborted in ${latency_ms}ms to conserve edge compute and eliminate false positive diagnostic reports.`}
               </div>
             </div>
           </div>

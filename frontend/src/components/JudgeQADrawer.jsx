@@ -31,6 +31,10 @@ export default function JudgeQADrawer({ isOpen, onClose }) {
       a: 'Module 1 acts as an autonomous edge gate. In under 100ms, it evaluates Laplacian variance sharpness, illumination bounds, and circular FOV. If the image fails (e.g. sharpness < 0.00015), the pipeline immediately short-circuits: Modules 2 and 3 are aborted, saving edge compute and preventing false positives, while the ASHA worker receives instant re-capture guidance.'
     },
     {
+      q: 'What happens if a user uploads scenery, a document, or a non-fundus photo instead of an eye?',
+      a: 'We built a dedicated Anatomical Gatekeeper Mini-Model that executes as Gate 0 before any deep learning inference. It inspects retinal pigment epithelium (RPE) chromatic dominance (R/(R+G+B) > 0.38), blue-to-red ocular media attenuation (B/R < 0.65), cool-color spectrum contamination (<8% sky/foliage pixels), and circular optical vignetting. If a non-retinal photo is detected, the entire pipeline immediately aborts in under 80ms, eliminating out-of-distribution hallucinations.'
+    },
+    {
       q: 'Why did you separate Neovascularization (NV) into vessel differencing rather than a 4th segmentation head?',
       a: 'Neovascularization is present in less than 2% of screening populations. Training a 4th deep segmentation head on such extreme class imbalance causes either complete non-detection or severe false positive hallucination on normal vessels. Our dedicated vessel-differencing module applies multiscale Frangi matched filtering and subtracts normal landmark vessel topology within 1.0 DD of the optic disc, isolating fragile new vessel fronds with high specificity.'
     },

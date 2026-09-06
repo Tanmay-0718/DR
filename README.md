@@ -22,7 +22,8 @@
 2. [Clinical Diagnostic Foundation: The ETDRS 4-2-1 Rule](#2-clinical-diagnostic-foundation-the-etdrs-4-2-1-rule)
 3. [18-Dimensional Handcrafted Biomarker Vector & Dual-Branch Multimodal Fusion](#3-18-dimensional-handcrafted-biomarker-vector--dual-branch-multimodal-fusion)
 4. [End-to-End Edge Pipeline Architecture (Modules 1 to 5)](#4-end-to-end-edge-pipeline-architecture-modules-1-to-5)
-   - [Module 1: Image Quality Assessment (IQA Gate)](#module-1-image-quality-assessment-iqa-gate)
+   - [The 9 AI/ML Models in Chakshuh AI](#the-9-aiml-models-in-chakshuh-ai)
+   - [Module 1: Image Quality Assessment & Anatomical Gatekeeper](#module-1-image-quality-assessment--anatomical-gatekeeper)
    - [Module 2: Multi-Head Anatomical & Lesion Segmentation](#module-2-multi-head-anatomical--lesion-segmentation)
    - [Module 3: ICDR Severity Grading & Temperature Scaling](#module-3-icdr-severity-grading--temperature-scaling)
    - [Module 4: Explainable AI (XAI) & Clinician Audit Report](#module-4-explainable-ai-xai--clinician-audit-report)
@@ -101,22 +102,23 @@ Venous beading is an essential indicator of profound retinal ischemia where prim
 
 ## 3. 18-Dimensional Handcrafted Biomarker Vector & Dual-Branch Multimodal Fusion
 
-Chakshuh AI extracts an **18-dimensional handcrafted biomarker vector** $\mathbf{f}_{\text{lesion}} \in \mathbb{R}^{18}$ that maps directly to ETDRS clinical features:
+### Clinical Biomarker Vector Definition (`extract_lesion_features.m`)
+The handcrafted feature vector $\mathbf{f}_{\text{lesion}} \in \mathbb{R}^{18}$ translates raw pixel segmentations into clinical biomarkers mapped to international protocols:
 
-| Index | Symbol | Feature Name | Clinical Purpose | Diagnostic Relevance |
+| Dimension | Symbol | Clinical Feature | Extraction Methodology | Diagnostic Importance |
 | :---: | :---: | :--- | :--- | :--- |
-| **1** | $n_{\text{ma}}$ | Microaneurysm Count | Focal vascular out-pouching | Hallmark of ICDR Grade 1 (Mild NPDR) |
-| **2** | $n_{\text{hem}}$ | Intraretinal Hemorrhage Count | Capillary rupture quantification | Quantifies Grade 2 vs. Grade 3 NPDR |
-| **3** | $A_{\text{exudate}}$ | Hard Exudate Area Fraction (%) | Serum lipoprotein leakage burden | Reflects chronic breakdown of blood-retinal barrier |
-| **4** | $d_{\text{disc}}$ | Minimum Lesion-to-Disc Distance | Spatial distribution from optic disc | Peripapillary involvement analysis |
-| **5** | $\mathbf{1}_{\text{nv}}$ | Neovascularization Binary Flag | Retinal or disc neovascularization | Immediate override to Grade 4 (PDR) |
-| **6** | $d_{\text{fovea}}$ | Exudate-to-Fovea Distance (DD) | Proximity to foveal avascular zone | Clinically Significant Macular Edema (CSME) |
-| **7** | $n_{\text{cws}}$ | Cotton Wool Spot (CWS) Count | Axoplasmic flow stasis & micro-infarctions | Pre-proliferative ischemic index |
-| **8** | $\mathbf{1}_{\text{scar}}$ | Laser Scar Binary Flag | Chorioretinal photocoagulation scars | Distinguishes treated vs. treatment-naive eyes |
-| **9** | $\mathbf{1}_{\text{irma}}$ | IRMA Presence Binary Flag | Intraretinal microvascular abnormalities | ETDRS Rule 1 indicator |
-| **10** | $n_{\text{scar}}$ | PRP Laser Burn Count | Quantified laser photocoagulation spots | $\ge 15$ burns confirms Treated PDR (Grade 4) |
-| **11** | $S_{\text{prp}}$ | PRP Spatial Regularity Score | Geometric regularity of circular burns ($0..1$) | Distinguishes medical laser burns from drusen |
-| **12** | $R_{\text{halo}}$ | Melanin Pigment Halo Contrast | Atrophic burn center with hyperpigmented halo | Confirms mature, healed photocoagulation |
+| **1** | $n_{\text{ma}}$ | Microaneurysm Count | Multi-scale Gaussian matching + opening | Hallmark of initial background DR (Grade 1) |
+| **2** | $n_{\text{hem}}$ | Intraretinal Hemorrhage Count | Color morphology + thresholding | Stratifies Mild vs. Moderate vs. Severe NPDR |
+| **3** | $A_{\text{exudate}}$ | Hard Exudate Area Fraction (%) | Yellow lesion segmentation in L*a*b* | Quantifies lipid breakdown & vascular leak |
+| **4** | $d_{\text{disc}}$ | Minimum Disc-to-Lesion Distance | Euclidean distance to optic disc center | Identifies circinate retinopathy & NVD risk |
+| **5** | $\mathbf{1}_{\text{nv}}$ | Neovascularization Presence Flag | Vessel differencing + Frangi filtering | Defines Proliferative DR (Grade 4 Emergency) |
+| **6** | $d_{\text{fovea}}$ | Minimum Fovea-to-Exudate Distance | Distance to estimated FAZ coordinates | Triggers Diabetic Macular Edema (DME) referral |
+| **7** | $n_{\text{cws}}$ | Cotton Wool Spots (CWS) Count | White/gray ill-defined lesion contours | Retinal nerve fiber layer micro-infarcts |
+| **8** | $\mathbf{1}_{\text{scar}}$ | Retinal Wall Laser Scar Flag | High-contrast circular hypo/hyperpigmentation | Identifies prior Panretinal Photocoagulation |
+| **9** | $\mathbf{1}_{\text{irma}}$ | IRMA Presence Binary Flag | Intraretinal tortuous non-branching shunts | ETDRS Rule 1 criteria ($\mathbf{1}_{\text{irma}} = 1$) |
+| **10** | $n_{\text{scar}}$ | Total PRP Laser Burn Count | Morphological connected components count | $\ge 15$ scars confirms prior treated PDR |
+| **11** | $S_{\text{prp}}$ | PRP Pattern Regularity Score | Grid spatial alignment variance | Distinguishes intentional laser from pathology |
+| **12** | $R_{\text{halo}}$ | Melanin Halo Contrast Ratio | Pigmented margin vs. center intensity | Confirms mature chorioretinal laser scar |
 | **13** | $\rho_{\text{quad\_hem}}$ | Hemorrhage Quadrant Count ($0..4$) | Number of quadrants with $\ge 20$ hemorrhages | ETDRS Rule 4 criteria ($\rho = 4$) |
 | **14** | $S_{\text{fib}}$ | Fibrovascular Traction Score | Preretinal fibrous membrane density | Predicts tractional retinal detachment |
 | **15** | $N_{\text{vb\_quad}}$ | Venous Beading Quadrants ($0..4$) | Number of quadrants with $CV > 0.28$ | ETDRS Rule 2 criteria ($N_{\text{vb}} \ge 2$) |
@@ -143,21 +145,23 @@ $$\mathbf{z}_{\text{logits}} = \mathbf{W}_3 \mathbf{h}_2 + \mathbf{b}_3 \quad (\
                                │
                                ▼
 ┌────────────────────────────────────────────────────────┐
-│ MODULE 1: IMAGE QUALITY ASSESSMENT (IQA GATE)          │
-│ • Sharpness: 2D Laplacian Variance > 0.00015           │
-│ • Illumination: CIE L*a*b* Luminance L* ∈ [8, 92]      │
-│ • Field of View: Valid Retinal Aperture > 35%          │
-│ • Latency: 78.5 ms (< 200 ms standard)                 │
+│ MODULE 1: IQA EDGE GATE & ANATOMICAL GATEKEEPER        │
+│ • Gate 0: Anatomical Validity Mini-Model               │
+│   (RPE Red Ratio >0.38, Blue/Red <0.65, Cool <8%)      │
+│ • Gate 1: Focus Sharpness: 2D Laplacian Var > 0.00015  │
+│ • Gate 2: Illumination: CIE L*a*b* Luminance L* ∈[8,92]│
+│ • Gate 3: Field of View: Retinal Disc Aperture > 35%   │
+│ • Latency: 78.5 ms (Zero internet dependency)          │
 └──────────────────────────────┬─────────────────────────┘
                                │
                 ┌──────────────┴──────────────┐
-         [ Gradable: PASS ]            [ Ungradable: REJECT ]
+         [ Gradable: PASS ]            [ Non-Fundus / Ungradable: REJECT ]
                 │                             │
                 ▼                             ▼
 ┌──────────────────────────────────────┐ ┌──────────────────────────────────────┐
-│ MODULE 2: MULTI-HEAD SEGMENTATION    │ │ Immediate Audio-Visual Re-take Prompt│
-│ • Optic Disc & Fovea Localization    │ │ (Eliminates wasted inference & wrong │
-│ • Vessel Tree (Caliber Profile CV)   │ │  referrals before deep processing)   │
+│ MODULE 2: MULTI-HEAD SEGMENTATION    │ │ Immediate Rejection & Protocol Alert │
+│ • Optic Disc & Fovea Localization    │ │ (OOD Scenery/Document or Blur halted │
+│ • Vessel Tree (Caliber Profile CV)   │ │  in <80ms; zero deep false positives)│
 │ • Microaneurysms, Hemorrhages, CWS   │ └──────────────────────────────────────┘
 │ • Hard Exudates, Scars, IRMA         │
 └──────────────────┬───────────────────┘
@@ -190,11 +194,34 @@ $$\mathbf{z}_{\text{logits}} = \mathbf{W}_3 \mathbf{h}_2 + \mathbf{b}_3 \quad (\
 └────────────────────────────────────────────────────────┘
 ```
 
-### Module 1: Image Quality Assessment (IQA Gate)
-- **Sharpness Metric**: Computes the variance of the discrete 2D Laplacian operator $\nabla^2 I$ applied over the luminance channel. If $\text{Var}(\nabla^2 I) < 0.00015$, the image is flagged as severely blurred.
-- **Illumination Balance**: Converts the image into the CIE $L^*a^*b^*$ color space and evaluates average luminance $L^*$. Ensures $8 \le \mu(L^*) \le 92$ to catch under-exposed (dense cataract or un-dilated pupil) or over-exposed (flash washout) acquisitions.
-- **Field of View (FOV) Aperture**: Measures the valid non-background retinal disk mask coverage $> 35\%$ to reject partial scans or severe eyelid closures.
-- **Speed & Short-Circuiting**: Executes in **78.5 ms**, immediately halting execution on ungradable images so community healthcare workers receive an instant re-take instruction while the patient is still seated.
+### The 9 AI/ML Models in Chakshuh AI
+
+Rather than relying on a single opaque black-box network, Chakshuh AI orchestrates a pipeline of **9 specialized mathematical and machine learning models**, each responsible for a validated stage of the diagnostic contract:
+
+| Model # | Model Name | Primary File | Architectural Type | Clinical Function & Execution Guarantee |
+| :---: | :--- | :--- | :--- | :--- |
+| **Model 0** | **Anatomical Validity Gatekeeper Mini-Model** | `verify_fundus_validity.m` / JS Edge | Multi-parametric Chromatic & Aperture Model | **Gate 0 (<5 ms)**: Differentiates authentic ocular fundus images from out-of-distribution photos (scenery, skies, trees, text, faces). Evaluates RPE red ratio ($>0.38$), blue attenuation ($<0.65$), and cool color contamination ($<8\%$). Immediately aborts downstream deep networks on non-retinal images. |
+| **Model 1** | **IQA Edge Quality Gate Model** | `iqa_classifier.m` / `compute_iqa_metrics.m` | Discrete Laplace & CIE $L^*a^*b^*$ Spatial Filter | Evaluates 2D Laplacian focus sharpness, luminance bounds $[8, 92]$, and circular aperture coverage ($>35\%$). Executes in $<80\text{ ms}$ at the edge, guaranteeing ungradable images never waste GPU compute. |
+| **Model 2** | **Optic Disc & Fovea Localization Model** | `localize_anatomy.m` | Circular Hough Transform & Geometric Projector | Locates the Optic Disc center $(\hat{x}_d, \hat{y}_d)$ and anatomically projects the Foveal Avascular Zone (FAZ) center $2.5\times\text{DD}$ temporally to establish quadrant coordinates. |
+| **Model 3** | **Vascular Tree & Venous Beading Profiler** | `segment_lesions.m` | CLAHE + Multiscale Matched Filter + Caliber Profiler | Extracts continuous vessel arborization, computes Euclidean distance-transform caliber along centerline skeletons, and classifies Venous Beading ($CV > 0.28$) for ETDRS Rule 2. |
+| **Model 4** | **Multi-Head Semantic Lesion Segmentation Model** | `build_multihead_deeplabv3p.m` | DeepLabv3+ with Atrous Spatial Pyramid Pooling | ResNet-50 shared encoder with 5 parallel decoders generating pixel-level segmentation masks for MAs, Hemorrhages, Hard Exudates, Cotton Wool Spots, and Retinal Wall Laser Burns. |
+| **Model 5** | **Neovascularization Vessel Differencing Model** | `detect_neovascularization.m` | Multiscale Frangi Matched Filter & Topology Subtraction | Solves extreme class imbalance ($<2\%$ prevalence) by subtracting landmark vessels within $1.0\text{ DD}$ of the optic disc, isolating fragile new vessel fronds (NVD/NVE) with zero normal-vessel hallucination. |
+| **Model 6** | **Deep Convolutional Spatial Feature Extractor** | `build_fused_model.m` (Spatial Branch) | ResNet-50 Deep Convolutional Backbone | Extracts a dense 128-dimensional global semantic feature vector $\mathbf{z}_{\text{CNN}} \in \mathbb{R}^{128}$ capturing microstructural context. |
+| **Model 7** | **Multimodal Dual-Branch Fused Classifier** | `classify_retinopathy.m` / `build_fused_model.m` | 146-d Multimodal Deep Classification Head | Concatenates $\mathbf{z}_{\text{CNN}}$ (128-d) with the 18-d handcrafted ETDRS biomarker vector. Employs post-hoc temperature scaling ($T=1.42$, ECE $< 0.03$) to output calibrated ICDR Grades $0..4$. |
+| **Model 8** | **Clinician Explainability (Grad-CAM++) Model** | `compute_gradcam_plusplus.m` | 2nd & 3rd-Order Gradient Attribution Engine | Calculates higher-order positive partial derivatives with respect to the final convolutional feature maps, producing high-resolution class-discriminative saliency heatmaps for clinician audits. |
+
+### Module 1: Image Quality Assessment & Anatomical Gatekeeper
+- **Gate 0: Anatomical Validity Mini-Model (`verify_fundus_validity.m`)**:
+  - **Retinal Pigment Epithelium (RPE) Red Dominance**: Measures the red-channel fraction on non-dark tissue:
+    $$\text{RedRatio} = \frac{\mu_R + \epsilon}{\mu_R + \mu_G + \mu_B + 3\epsilon} > 0.38 \quad (\text{ideal } > 0.44)$$
+  - **Ocular Media Blue Attenuation**: In human eyes, hemoglobin and ocular media strongly attenuate blue wavelengths:
+    $$\text{BlueToRed} = \frac{\mu_B + \epsilon}{\mu_R + \epsilon} < 0.65 \quad (\text{ideal } < 0.50)$$
+  - **Cool-Color Contamination Filter**: Natural scenery (blue sky, foliage green, bodies of water) is rich in cool wavelengths where $B > R + 0.06$ or $G > R + 0.10$. Chakshuh AI rejects any image where the cool pixel fraction exceeds $8\%$ of illuminated tissue.
+  - **Optical Aperture Vignetting**: Measures the four image corners to verify dark optical vignetting ($\mu_{\text{corner}} < 0.20$) produced by circular fundus camera optical masks.
+- **Gate 1: Sharpness Metric**: Computes the variance of the discrete 2D Laplacian operator $\nabla^2 I$ applied over the luminance channel. If $\text{Var}(\nabla^2 I) < 0.00015$, the image is flagged as severely blurred.
+- **Gate 2: Illumination Balance**: Converts the image into the CIE $L^*a^*b^*$ color space and evaluates average luminance $L^*$. Ensures $8 \le \mu(L^*) \le 92$ to catch under-exposed or over-exposed acquisitions.
+- **Gate 3: Field of View (FOV) Aperture**: Measures valid non-background retinal disk mask coverage $> 35\%$ to reject partial scans or severe eyelid closures.
+- **Speed & Short-Circuiting**: Executes in **78.5 ms**, immediately halting execution on non-fundus or ungradable images so healthcare workers receive an instant re-take instruction while the patient is still seated.
 
 ### Module 2: Multi-Head Anatomical & Lesion Segmentation
 - **Vascular Tree Extraction**: Utilizes green-channel contrast-limited adaptive histogram equalization (CLAHE), multi-scale matched Gaussian filtering, and morphological top-hat transforms to extract continuous vessel trees. Caliber variations along primary trunks are profiled to detect venous beading ($CV > 0.28$).

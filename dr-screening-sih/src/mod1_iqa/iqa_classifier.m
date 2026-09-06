@@ -15,6 +15,12 @@ t_start = tic;
 % Calculate quality metrics
 metrics = compute_iqa_metrics(img);
 
+% Gate 0: Verify image is genuinely an ocular fundus photograph (OOD / Scenery check)
+[is_fundus, fundus_score, validity_info] = verify_fundus_validity(img);
+metrics.is_fundus = is_fundus;
+metrics.fundus_score = fundus_score;
+metrics.validity_info = validity_info;
+
 % Define empirical decision thresholds for edge gate
 SHARPNESS_THRESHOLD = 0.00015; % Below this is blurry
 ILLUM_MIN = 8.0;              % Below this is dark/underexposed
@@ -24,7 +30,10 @@ FOV_MIN_RATIO = 0.35;         % Below this is truncated FOV
 is_gradable = true;
 reason_code = 'pass';
 
-if metrics.sharpness_variance < SHARPNESS_THRESHOLD
+if ~is_fundus
+    is_gradable = false;
+    reason_code = 'non_fundus';
+elseif metrics.sharpness_variance < SHARPNESS_THRESHOLD
     is_gradable = false;
     reason_code = 'blur';
 elseif metrics.illumination_mean < ILLUM_MIN || metrics.illumination_mean > ILLUM_MAX

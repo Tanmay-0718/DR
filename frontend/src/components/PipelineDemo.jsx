@@ -383,9 +383,11 @@ export default function PipelineDemo() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5">
             <div className={`p-1.5 rounded-lg border ${
-              pipelineResult?.lesions?.has_nv || pipelineResult?.lesions?.has_retinal_scarring
-                ? 'bg-rose-950/60 border-rose-500/60 text-rose-400' 
-                : 'bg-cyan-950/60 border-cyan-500/60 text-cyan-400'
+              pipelineResult && !pipelineResult.is_gradable
+                ? 'bg-rose-950/60 border-rose-500/60 text-rose-400'
+                : (pipelineResult?.lesions?.has_nv || pipelineResult?.lesions?.has_retinal_scarring
+                  ? 'bg-rose-950/60 border-rose-500/60 text-rose-400' 
+                  : 'bg-cyan-950/60 border-cyan-500/60 text-cyan-400')
             }`}>
               <ShieldAlert className="h-4 w-4" />
             </div>
@@ -395,205 +397,239 @@ export default function PipelineDemo() {
                   {customImageSrc ? `Custom Retinal Upload: ${customFileName || 'Fundus Image'}` : `Case: ${selectedSample?.title || 'Selected Sample'}`}
                 </span>
                 <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
-                  pipelineResult?.lesions?.has_nv 
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
-                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                  pipelineResult && !pipelineResult.is_gradable
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                    : (pipelineResult?.lesions?.has_nv 
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
+                      : 'bg-slate-800 text-slate-400 border-slate-700')
                 }`}>
-                  {pipelineResult?.lesions?.has_nv ? 'PDR • Neovascularization (NV) Active' : 'Non-Proliferative / No NV'}
+                  {pipelineResult && !pipelineResult.is_gradable
+                    ? (pipelineResult.iqa_reason === 'non_fundus' ? 'REJECTED: NON-FUNDUS / OOD' : `REJECTED: ${pipelineResult.iqa_reason?.toUpperCase()}`)
+                    : (pipelineResult?.lesions?.has_nv ? 'PDR • Neovascularization (NV) Active' : 'Non-Proliferative / No NV')}
                 </span>
               </div>
               <div className="text-[11px] text-slate-400">
-                Diagnostic Finding: <span className="font-semibold text-slate-200">{pipelineResult?.class_info?.name || 'Graded'}</span>
-                {pipelineResult?.confidence ? ` (${(pipelineResult.confidence * 100).toFixed(1)}% Calibrated Conf)` : ''}
-                {pipelineResult?.referable_dr ? ' • REFERABLE' : ' • Routine Annual'}
+                {pipelineResult && !pipelineResult.is_gradable ? (
+                  <span className="text-rose-300">
+                    Status: <strong className="font-semibold">{pipelineResult.iqa_reason === 'non_fundus' ? 'Non-Retinal Image Detected' : 'Ungradable Quality'}</strong> &bull; Pipeline Short-Circuited
+                  </span>
+                ) : (
+                  <>
+                    Diagnostic Finding: <span className="font-semibold text-slate-200">{pipelineResult?.class_info?.name || 'Graded'}</span>
+                    {pipelineResult?.confidence ? ` (${(pipelineResult.confidence * 100).toFixed(1)}% Calibrated Conf)` : ''}
+                    {pipelineResult?.referable_dr ? ' • REFERABLE' : ' • Routine Annual'}
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           {/* Clinician Severity Override Selector */}
-          <div className="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 text-[11px]">
-            <span className="text-slate-500 px-1 text-[10px] uppercase tracking-wider font-semibold">Triage:</span>
-            {[
-              { g: null, label: 'Auto (AI)' },
-              { g: 0, label: 'Gr 0' },
-              { g: 1, label: 'Gr 1' },
-              { g: 2, label: 'Gr 2' },
-              { g: 3, label: 'Gr 3' },
-              { g: 4, label: 'Gr 4 (PDR)' }
-            ].map((btn) => {
-              const isCurrent = (clinicianOverrideGrade === null && btn.g === null) || clinicianOverrideGrade === btn.g;
-              return (
-                <button
-                  key={btn.label}
-                  onClick={() => handleOverrideGrade(btn.g)}
-                  className={`px-2 py-0.5 rounded font-mono font-medium transition-all ${
-                    isCurrent 
-                      ? (btn.g === 4 ? 'bg-rose-600 text-white shadow-sm' : 'bg-cyan-600 text-white shadow-sm') 
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              );
-            })}
-          </div>
+          {pipelineResult && !pipelineResult.is_gradable ? (
+            <div className="flex items-center space-x-1.5 bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-500/40 text-[11px] text-rose-300 font-mono">
+              <span>Short-Circuit Guard: Halted</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 text-[11px]">
+              <span className="text-slate-500 px-1 text-[10px] uppercase tracking-wider font-semibold">Triage:</span>
+              {[
+                { g: null, label: 'Auto (AI)' },
+                { g: 0, label: 'Gr 0' },
+                { g: 1, label: 'Gr 1' },
+                { g: 2, label: 'Gr 2' },
+                { g: 3, label: 'Gr 3' },
+                { g: 4, label: 'Gr 4 (PDR)' }
+              ].map((btn) => {
+                const isCurrent = (clinicianOverrideGrade === null && btn.g === null) || clinicianOverrideGrade === btn.g;
+                return (
+                  <button
+                    key={btn.label}
+                    onClick={() => handleOverrideGrade(btn.g)}
+                    className={`px-2 py-0.5 rounded font-mono font-medium transition-all ${
+                      isCurrent 
+                        ? (btn.g === 4 ? 'bg-rose-600 text-white shadow-sm' : 'bg-cyan-600 text-white shadow-sm') 
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    {btn.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Retinal Wall Biomarkers and Active Verification Toggles */}
-        <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mr-1">Retinal Wall Biomarkers:</span>
-            
-            {/* Scarring Badge */}
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
-              pipelineResult?.lesions?.has_retinal_scarring
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_retinal_scarring ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
-              <span>
-                {pipelineResult?.lesions?.has_retinal_scarring 
-                  ? `Retinal Wall Scarring (${pipelineResult.lesions.scar_count || 28} PRP Burns)` 
-                  : 'Wall Scarring: Absent'}
+        {pipelineResult && !pipelineResult.is_gradable ? (
+          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2 text-rose-400">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              <span className="font-semibold">
+                {pipelineResult.iqa_reason === 'non_fundus'
+                  ? 'Gatekeeper Alert: Non-fundus scenery or out-of-distribution photograph detected. Downstream lesion segmentation and diagnostic grading halted.'
+                  : `IQA Quality Rejection (${pipelineResult.iqa_reason}): Image ungradable. Diagnostic pipeline halted to prevent false positive reports.`}
               </span>
-            </span>
-
-            {/* Cotton Wool Spots Badge */}
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
-              pipelineResult?.lesions?.has_cws
-                ? 'bg-sky-500/20 text-sky-300 border-sky-500/50'
-                : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_cws ? 'bg-sky-400' : 'bg-slate-600'}`}></span>
-              <span>
-                {pipelineResult?.lesions?.has_cws 
-                  ? `Cotton Wool Spots (${pipelineResult.lesions.cotton_wool_spots} Ischemia)` 
-                  : 'CWS: Absent'}
-              </span>
-            </span>
-
-            {/* IRMA Badge */}
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
-              pipelineResult?.lesions?.has_irma
-                ? 'bg-purple-500/20 text-purple-300 border-purple-500/50'
-                : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_irma ? 'bg-purple-400' : 'bg-slate-600'}`}></span>
-              <span>
-                {pipelineResult?.lesions?.has_irma 
-                  ? `IRMA (${pipelineResult.lesions.irma_count || 2} Shunts)` 
-                  : 'IRMA: Absent'}
-              </span>
-            </span>
-
-            {/* Venous Beading Badge */}
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
-              pipelineResult?.lesions?.has_vb
-                ? 'bg-orange-500/20 text-orange-300 border-orange-500/50'
-                : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_vb ? 'bg-orange-400' : 'bg-slate-600'}`}></span>
-              <span>
-                {pipelineResult?.lesions?.has_vb 
-                  ? `Venous Beading (${pipelineResult.lesions.vb_quad_count || 2} Quads)` 
-                  : 'VB: Absent'}
-              </span>
-            </span>
-
-            {/* ETDRS 4-2-1 Status Badge */}
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
-              pipelineResult?.etdrs_421?.severe_npdr
-                ? (pipelineResult?.etdrs_421?.very_severe_npdr 
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/50')
-                : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                pipelineResult?.etdrs_421?.very_severe_npdr ? 'bg-rose-400' : (pipelineResult?.etdrs_421?.severe_npdr ? 'bg-amber-400' : 'bg-slate-600')
-              }`}></span>
-              <span>
-                {pipelineResult?.etdrs_421?.severe_npdr 
-                  ? `ETDRS 4-2-1: MET (${pipelineResult?.etdrs_421?.criteria_met_count || 1}/3 - ${pipelineResult?.etdrs_421?.very_severe_npdr ? 'Very Severe' : 'Severe'})`
-                  : 'ETDRS 4-2-1: 0/3 Criteria'}
-              </span>
+            </div>
+            <span className="text-[10px] font-mono bg-rose-950/60 text-rose-300 px-2 py-0.5 rounded border border-rose-500/40">
+              Zero False-Positive Safeguard Active
             </span>
           </div>
-
-          {/* Biomarker Override Toggle Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mr-1">Clinician Toggles:</span>
-            
-            {/* NV Toggle */}
-            <button
-              onClick={handleToggleNV}
-              title="Toggle Neovascularization (PDR) confirmation"
-              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
-                pipelineResult?.lesions?.has_nv
-                  ? 'bg-rose-950/80 border-rose-500/80 text-rose-200'
-                  : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_nv ? 'bg-rose-400 animate-ping' : 'bg-slate-600'}`}></span>
-              <span>NV (PDR)</span>
-            </button>
-
-            {/* Scarring Toggle */}
-            <button
-              onClick={handleToggleScarring}
-              title="Toggle Retinal Wall Scarring / PRP Laser Burns confirmation"
-              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+        ) : (
+          <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mr-1">Retinal Wall Biomarkers:</span>
+              
+              {/* Scarring Badge */}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
                 pipelineResult?.lesions?.has_retinal_scarring
-                  ? 'bg-amber-950/80 border-amber-500/80 text-amber-200'
-                  : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_retinal_scarring ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
-              <span>PRP Wall Scars</span>
-            </button>
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                  : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_retinal_scarring ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                <span>
+                  {pipelineResult?.lesions?.has_retinal_scarring 
+                    ? `Retinal Wall Scarring (${pipelineResult.lesions.scar_count || 28} PRP Burns)` 
+                    : 'Wall Scarring: Absent'}
+                </span>
+              </span>
 
-            {/* CWS Toggle */}
-            <button
-              onClick={handleToggleCWS}
-              title="Toggle Cotton Wool Spots confirmation"
-              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+              {/* Cotton Wool Spots Badge */}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
                 pipelineResult?.lesions?.has_cws
-                  ? 'bg-sky-950/80 border-sky-500/80 text-sky-200'
-                  : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_cws ? 'bg-sky-400' : 'bg-slate-600'}`}></span>
-              <span>CWS</span>
-            </button>
+                  ? 'bg-sky-500/20 text-sky-300 border-sky-500/50'
+                  : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_cws ? 'bg-sky-400' : 'bg-slate-600'}`}></span>
+                <span>
+                  {pipelineResult?.lesions?.has_cws 
+                    ? `Cotton Wool Spots (${pipelineResult.lesions.cotton_wool_spots} Ischemia)` 
+                    : 'CWS: Absent'}
+                </span>
+              </span>
 
-            {/* IRMA Toggle */}
-            <button
-              onClick={handleToggleIRMA}
-              title="Toggle IRMA shunt vessels confirmation"
-              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+              {/* IRMA Badge */}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
                 pipelineResult?.lesions?.has_irma
-                  ? 'bg-purple-950/80 border-purple-500/80 text-purple-200'
-                  : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_irma ? 'bg-purple-400' : 'bg-slate-600'}`}></span>
-              <span>IRMA</span>
-            </button>
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+                  : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_irma ? 'bg-purple-400' : 'bg-slate-600'}`}></span>
+                <span>
+                  {pipelineResult?.lesions?.has_irma 
+                    ? `IRMA (${pipelineResult.lesions.irma_count || 2} Shunts)` 
+                    : 'IRMA: Absent'}
+                </span>
+              </span>
 
-            {/* VB (Rule 2) Toggle */}
-            <button
-              onClick={handleToggleVB}
-              title="Toggle Venous Beading (Rule 2) confirmation"
-              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+              {/* Venous Beading Badge */}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
                 pipelineResult?.lesions?.has_vb
-                  ? 'bg-orange-950/80 border-orange-500/80 text-orange-200'
-                  : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_vb ? 'bg-orange-400' : 'bg-slate-600'}`}></span>
-              <span>VB (Rule 2)</span>
-            </button>
+                  ? 'bg-orange-500/20 text-orange-300 border-orange-500/50'
+                  : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_vb ? 'bg-orange-400' : 'bg-slate-600'}`}></span>
+                <span>
+                  {pipelineResult?.lesions?.has_vb 
+                    ? `Venous Beading (${pipelineResult.lesions.vb_quad_count || 2} Quads)` 
+                    : 'VB: Absent'}
+                </span>
+              </span>
+
+              {/* ETDRS 4-2-1 Status Badge */}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+                pipelineResult?.etdrs_421?.severe_npdr
+                  ? (pipelineResult?.etdrs_421?.very_severe_npdr 
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/50')
+                  : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  pipelineResult?.etdrs_421?.very_severe_npdr ? 'bg-rose-400' : (pipelineResult?.etdrs_421?.severe_npdr ? 'bg-amber-400' : 'bg-slate-600')
+                }`}></span>
+                <span>
+                  {pipelineResult?.etdrs_421?.severe_npdr 
+                    ? `ETDRS 4-2-1: MET (${pipelineResult?.etdrs_421?.criteria_met_count || 1}/3 - ${pipelineResult?.etdrs_421?.very_severe_npdr ? 'Very Severe' : 'Severe'})`
+                    : 'ETDRS 4-2-1: 0/3 Criteria'}
+                </span>
+              </span>
+            </div>
+
+            {/* Biomarker Override Toggle Buttons */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mr-1">Clinician Toggles:</span>
+              
+              {/* NV Toggle */}
+              <button
+                onClick={handleToggleNV}
+                title="Toggle Neovascularization (PDR) confirmation"
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                  pipelineResult?.lesions?.has_nv
+                    ? 'bg-rose-950/80 border-rose-500/80 text-rose-200'
+                    : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_nv ? 'bg-rose-400 animate-ping' : 'bg-slate-600'}`}></span>
+                <span>NV (PDR)</span>
+              </button>
+
+              {/* Scarring Toggle */}
+              <button
+                onClick={handleToggleScarring}
+                title="Toggle Retinal Wall Scarring / PRP Laser Burns confirmation"
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                  pipelineResult?.lesions?.has_retinal_scarring
+                    ? 'bg-amber-950/80 border-amber-500/80 text-amber-200'
+                    : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_retinal_scarring ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                <span>PRP Wall Scars</span>
+              </button>
+
+              {/* CWS Toggle */}
+              <button
+                onClick={handleToggleCWS}
+                title="Toggle Cotton Wool Spots confirmation"
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                  pipelineResult?.lesions?.has_cws
+                    ? 'bg-sky-950/80 border-sky-500/80 text-sky-200'
+                    : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_cws ? 'bg-sky-400' : 'bg-slate-600'}`}></span>
+                <span>CWS</span>
+              </button>
+
+              {/* IRMA Toggle */}
+              <button
+                onClick={handleToggleIRMA}
+                title="Toggle IRMA shunt vessels confirmation"
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                  pipelineResult?.lesions?.has_irma
+                    ? 'bg-purple-950/80 border-purple-500/80 text-purple-200'
+                    : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_irma ? 'bg-purple-400' : 'bg-slate-600'}`}></span>
+                <span>IRMA</span>
+              </button>
+
+              {/* VB (Rule 2) Toggle */}
+              <button
+                onClick={handleToggleVB}
+                title="Toggle Venous Beading (Rule 2) confirmation"
+                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                  pipelineResult?.lesions?.has_vb
+                    ? 'bg-orange-950/80 border-orange-500/80 text-orange-200'
+                    : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_vb ? 'bg-orange-400' : 'bg-slate-600'}`}></span>
+                <span>VB (Rule 2)</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       </div>
 
