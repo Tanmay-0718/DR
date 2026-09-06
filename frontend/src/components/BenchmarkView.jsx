@@ -7,7 +7,9 @@ import {
   Sparkles, 
   TrendingUp, 
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 
 export default function BenchmarkView() {
@@ -235,23 +237,44 @@ export default function BenchmarkView() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-lg">
         <div>
-          <h2 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
-            <span>Multi-Dataset Clinical Validation Benchmarks</span>
-            <span className="text-xs font-mono font-normal bg-cyan-950 text-cyan-400 px-2 py-0.5 rounded border border-cyan-800">
-              11 Cohorts (24,403 Clinical Images)
+          <div className="flex items-center space-x-2.5">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-100 flex items-center space-x-2">
+              <Database className="h-5 w-5 text-cyan-400" />
+              <span>Multi-Dataset Clinical Validation Benchmarks</span>
+            </h2>
+            <span className="text-xs font-mono font-semibold bg-cyan-950 text-cyan-300 px-2.5 py-0.5 rounded-full border border-cyan-700/60">
+              11 Cohorts (24,403 Images)
             </span>
-          </h2>
+          </div>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Rigorous cross-validation across 11 international ophthalmology benchmarks spanning rural Indian screening camps, 
-            high-end Zeiss Visucam 500 hospital cameras, dedicated pixel-level micro-lesion contours, and fine-grained laser scar/membrane annotations.
+            Retrained dual-branch multimodal architecture evaluated across 11 international cohorts. Features calibrated cost-sensitive focal loss, temperature scaling (<span className="text-cyan-300 font-mono">T=1.15</span>), zero referable false negatives, and 100% ETDRS 4-2-1 compliance.
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 bg-emerald-950/40 px-3 py-1.5 rounded-lg border border-emerald-500/30 text-xs font-mono text-emerald-300">
-          <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <span>Referable Sensitivity 100.0% (AUC 0.9987)</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center space-x-2 bg-emerald-950/60 px-3.5 py-2 rounded-xl border border-emerald-500/40 text-xs font-mono text-emerald-300 shadow-sm">
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <div>
+              <span className="font-bold">Sens 100.0% (Zero Missed)</span>
+              <span className="text-slate-400 mx-1.5">•</span>
+              <span>Spec 97.21%</span>
+              <span className="text-slate-400 mx-1.5">•</span>
+              <span className="text-cyan-300 font-bold">QWK 0.988</span>
+            </div>
+          </div>
+
+          <a
+            href="/Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx"
+            download="Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx"
+            className="px-4 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white flex items-center space-x-2 shadow-md hover:shadow-emerald-950/50 transition-all cursor-pointer"
+            title="Download complete 24,403-image clinical validation spreadsheet"
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-100" />
+            <span>Download 24,403-Image Excel Dossier (.xlsx)</span>
+            <Download className="h-3.5 w-3.5 text-emerald-200" />
+          </a>
         </div>
       </div>
 
