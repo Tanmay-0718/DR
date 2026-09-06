@@ -197,7 +197,7 @@ export default function App() {
             <div className="flex items-center space-x-2">
               <HeartPulse className="h-4 w-4 text-cyan-400" />
               <span className="font-semibold text-slate-300">
-                Sunetra AI
+                Sunetra
               </span>
               <span className="text-slate-600 hidden sm:inline">&bull;</span>
               <span className="text-slate-400 hidden sm:inline">

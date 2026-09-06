@@ -40,7 +40,7 @@ export default function Navbar({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-slate-100 tracking-tight text-lg">
-                  Sunetra <span className="text-cyan-400 font-mono text-sm uppercase">AI</span>
+                  Sunetra
                 </span>
                 {isDevMode && (
                   <span className="hidden md:inline-flex items-center space-x-1 text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">

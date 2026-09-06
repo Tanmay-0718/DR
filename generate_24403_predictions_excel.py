@@ -2,7 +2,7 @@
 """
 generate_24403_predictions_excel.py
 ===================================
-Sunetra AI - Retrained Clinical Model Inference & Multi-Cohort Evaluation
+Sunetra - Retrained Clinical Model Inference & Multi-Cohort Evaluation
 Generates the complete 24,403-image clinical validation dossier in Microsoft Excel (.xlsx) and CSV formats.
 Covers all 11 benchmark cohorts with the retrained dual-branch multimodal model:
 - Referable DR Sensitivity: 100.00% (Zero missed sight-threatening cases)
@@ -24,10 +24,10 @@ from openpyxl.utils import get_column_letter
 # Set seed for clinical reproducibility
 random.seed(42)
 
-OUTPUT_XLSX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx")
-OUTPUT_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sunetra_AI_24403_Retrained_Clinical_Predictions.csv")
+OUTPUT_XLSX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sunetra_24403_Retrained_Clinical_Predictions.xlsx")
+OUTPUT_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sunetra_24403_Retrained_Clinical_Predictions.csv")
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dr-screening-sih", "reports")
-REPORTS_XLSX = os.path.join(REPORTS_DIR, "Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx")
+REPORTS_XLSX = os.path.join(REPORTS_DIR, "Sunetra_24403_Retrained_Clinical_Predictions.xlsx")
 
 # 11 Clinical Cohorts definition (Exactly 24,403 Images)
 COHORTS = [
@@ -328,7 +328,7 @@ def generate_image_record(index, cohort, img_num, gt_grade):
 
 def main():
     print(f"================================================================================")
-    print(f"SUNETRA AI - 24,403-IMAGE RETRAINED CLINICAL MODEL INFERENCE & EXCEL GENERATOR")
+    print(f"SUNETRA - 24,403-IMAGE RETRAINED CLINICAL MODEL INFERENCE & EXCEL GENERATOR")
     print(f"11 International Clinical Cohorts | Full Dual-Branch Multimodal Architecture")
     print(f"================================================================================")
 
@@ -540,7 +540,7 @@ def main():
     # Title Banner
     ws_summary.merge_cells('B2:E2')
     title_cell = ws_summary['B2']
-    title_cell.value = "SUNETRA AI - RETRAINED CLINICAL VALIDATION DOSSIER (24,403 IMAGES)"
+    title_cell.value = "SUNETRA - RETRAINED CLINICAL VALIDATION DOSSIER (24,403 IMAGES)"
     title_cell.font = title_font
     title_cell.fill = navy_header_fill
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -703,7 +703,7 @@ def main():
 
     ws_cohorts.merge_cells('B2:K2')
     cohort_title = ws_cohorts['B2']
-    cohort_title.value = "SUNETRA AI - INDIVIDUAL COHORT VALIDATION PERFORMANCE (11 BENCHMARK DATASETS)"
+    cohort_title.value = "SUNETRA - INDIVIDUAL COHORT VALIDATION PERFORMANCE (11 BENCHMARK DATASETS)"
     cohort_title.font = title_font
     cohort_title.fill = navy_header_fill
     cohort_title.alignment = Alignment(horizontal="center", vertical="center")
@@ -774,11 +774,19 @@ def main():
         print(f"Saving mirror copy to reports directory: {REPORTS_XLSX}")
         wb.save(REPORTS_XLSX)
 
+    # Also Save copy to frontend/public/ for direct download
+    PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "public")
+    PUBLIC_XLSX = os.path.join(PUBLIC_DIR, "Sunetra_24403_Retrained_Clinical_Predictions.xlsx")
+    if os.path.isdir(PUBLIC_DIR):
+        print(f"Saving web download copy to: {PUBLIC_XLSX}")
+        wb.save(PUBLIC_XLSX)
+
     print(f"\n================================================================================")
     print(f"SUCCESSFULLY GENERATED 24,403-IMAGE CLINICAL PREDICTIONS DOSSIER!")
     print(f"1. Excel Workbook : {OUTPUT_XLSX}")
     print(f"2. CSV Dataset    : {OUTPUT_CSV}")
     print(f"3. Reports Copy   : {REPORTS_XLSX}")
+    print(f"4. Web Copy       : {PUBLIC_XLSX}")
     print(f"================================================================================\n")
 
 if __name__ == "__main__":

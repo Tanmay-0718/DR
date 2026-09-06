@@ -1,4 +1,4 @@
-# Sunetra AI (सुनेत्रा AI)
+# Sunetra (सुनेत्रा)
 ### Autonomous Edge-Compute AI Diabetic Retinopathy Diagnostic Pipeline, ETDRS 4-2-1 Rule Staging, 18-Feature Biomarker Vector, 24,403-Image Multi-Cohort Validation & Discrete-Event Telemedicine Simulation
 
 [![SIH 2026 Grand Finale](https://img.shields.io/badge/SIH%202026-Grand%20Finale-blue.svg?style=for-the-badge&logo=target)](https://www.sih.gov.in/)
@@ -23,7 +23,7 @@
 2. [Clinical Diagnostic Foundation: The ETDRS 4-2-1 Rule & Venous Beading Detection](#2-clinical-diagnostic-foundation-the-etdrs-4-2-1-rule--venous-beading-detection)
 3. [18-Dimensional Handcrafted Biomarker Vector & Dual-Branch Multimodal Fusion](#3-18-dimensional-handcrafted-biomarker-vector--dual-branch-multimodal-fusion)
 4. [End-to-End Edge Pipeline Architecture (Modules 1 to 5)](#4-end-to-end-edge-pipeline-architecture-modules-1-to-5)
-   - [The 9 AI/ML Models in Sunetra AI](#the-9-aiml-models-in-sunetra-ai)
+   - [The 9 AI/ML Models in Sunetra](#the-9-aiml-models-in-sunetra)
    - [Gate 0: Anatomical Validity Gatekeeper (<5ms Non-Retinal Rejection)](#gate-0-anatomical-validity-gatekeeper-5ms-non-retinal-rejection)
    - [Module 1: Image Quality Assessment & Preprocessing](#module-1-image-quality-assessment--preprocessing)
    - [Module 2: Multi-Head Anatomical & Lesion Segmentation](#module-2-multi-head-anatomical--lesion-segmentation)
@@ -58,8 +58,8 @@ Although timely clinical interventions (such as anti-VEGF intravitreal injection
 - **Bandwidth Deficits at Primary Health Centers (PHCs)**: Most rural PHCs operate under constrained 2G or intermittent 3G cellular uplinks (typically bandwidth-limited to $< 250\text{ Kbps}$), making the transmission of high-resolution digital fundus photography (20–50 MB DICOM/TIFF files per eye) to cloud servers utterly infeasible.
 - **The "Black-Box" AI Trust Deficit**: Existing deep learning classifiers output monolithic numerical grades (e.g., "Grade 3") without localizing specific microaneurysms, quantifying hemorrhages by retinal quadrant, or computing venous caliber metrics. Ophthalmologists cannot legally or ethically accept unsupported AI recommendations without verifiable clinical biomarkers.
 
-### The Sunetra AI Solution
-**Sunetra AI (सुनेत्रा AI)** is an end-to-end, edge-native medical diagnostic system and tele-ophthalmology network architecture natively developed in **MATLAB R2024b, Simulink, and SimEvents** paired with an accessible, high-performance browser interface:
+### The Sunetra Solution
+**Sunetra (सुनेत्रा)** is an end-to-end, edge-native medical diagnostic system and tele-ophthalmology network architecture natively developed in **MATLAB R2024b, Simulink, and SimEvents** paired with an accessible, high-performance browser interface:
 1. **100% On-Device Edge Execution**: Operates locally on low-power hardware (NVIDIA Jetson Orin Nano, 8GB, 15W) with **zero internet dependency** required for real-time diagnosis in **186.4 ms**.
 2. **Automated ETDRS 4-2-1 Rule Staging**: Quantifies hemorrhages in all four retinal quadrants, evaluates venous beading via distance-transform caliber variance ($CV > 0.28$), and detects IRMA to differentiate Severe NPDR from Very Severe NPDR with transparent clinical rationales.
 3. **18-Dimensional Handcrafted Biomarker Vector**: Combines 18 morphologically verified clinical lesion metrics with a 128-dimensional deep convolutional feature space into a fused 146-dimensional multimodal embedding.
@@ -111,7 +111,7 @@ Venous beading is an essential indicator of profound retinal ischemia where prim
 
 ## 3. 18-Dimensional Handcrafted Biomarker Vector & Dual-Branch Multimodal Fusion
 
-Sunetra AI rejects the opaque "black-box" paradigm by extracting an **18-dimensional handcrafted biomarker vector** $\mathbf{f}_{\text{lesion}} \in \mathbb{R}^{18}$ that is directly aligned with ophthalmological examination protocols:
+Sunetra rejects the opaque "black-box" paradigm by extracting an **18-dimensional handcrafted biomarker vector** $\mathbf{f}_{\text{lesion}} \in \mathbb{R}^{18}$ that is directly aligned with ophthalmological examination protocols:
 
 | Feature Index | Symbol | Clinical Feature Name | Extraction Method | Diagnostic Significance |
 | :---: | :---: | :--- | :--- | :--- |
@@ -206,7 +206,7 @@ RAW FUNDUS IMAGE (Camera Capture / File Upload)
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### The 9 AI/ML Models in Sunetra AI
+### The 9 AI/ML Models in Sunetra
 1. **Gate 0 Gatekeeper Mini-Model**: Fast non-fundus rejection model ($<5\text{ ms}$) verifying circular retinal aperture, foveal pigment density, and vascular arborization curvature.
 2. **Module 1 IQA Classifier**: Evaluates Laplacian focus variance, CIE-Lab lightness histogram spread, and sensor saturation.
 3. **Optic Disc Localization Model**: Circular Hough transform and intensity symmetry model finding the optic nerve head.
@@ -221,7 +221,7 @@ RAW FUNDUS IMAGE (Camera Capture / File Upload)
 
 ## 5. Multi-Cohort Retraining & Clinical Validation (24,403 Images Across 11 Cohorts)
 
-Sunetra AI has been retrained and rigorously evaluated across **11 benchmark clinical cohorts** comprising **24,403 verified fundus images**:
+Sunetra has been retrained and rigorously evaluated across **11 benchmark clinical cohorts** comprising **24,403 verified fundus images**:
 
 ### Retrained Model Benchmark Metrics
 
@@ -254,8 +254,8 @@ Sunetra AI has been retrained and rigorously evaluated across **11 benchmark cli
 
 ### Full 24,403-Image Audit-Grade Excel Dossier & CSV Record
 For complete regulatory auditability, every single one of the 24,403 fundus examinations has been inferred and compiled into an Excel spreadsheet and raw CSV:
-- **`Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx`** *(3.11 MB, stored in root, `dr-screening-sih/reports/`, and `frontend/public/`)*
-- **`Sunetra_AI_24403_Retrained_Clinical_Predictions.csv`** *(7.52 MB, exactly 24,404 lines including header)*
+- **`Sunetra_24403_Retrained_Clinical_Predictions.xlsx`** *(3.11 MB, stored in root, `dr-screening-sih/reports/`, and `frontend/public/`)*
+- **`Sunetra_24403_Retrained_Clinical_Predictions.csv`** *(7.52 MB, exactly 24,404 lines including header)*
 
 #### Structure of the Excel Workbook (4 Worksheets):
 1. **`Executive_Summary`**: High-level comparison before vs after retraining, key metrics, and 2×2 Referable DR confusion matrix showing **0 False Negatives** (highlighted in emerald green).
@@ -277,7 +277,7 @@ For complete regulatory auditability, every single one of the 24,403 fundus exam
 ### 4-Phase Cinematic Entrance Animation Sequence
 Upon visiting the application, clinicians experience a 4-phase entrance sequence designed to establish clinical trust:
 1. **Phase 1: Center Glow & Optical Pulse**: The Sunetra cyan optical iris logo scales into view with an ambient gradient halo.
-2. **Phase 2: Typographic Reveal**: The brand title `"Sunetra AI"` and tagline `"Autonomous Retinal Tele-Ophthalmology Screening System"` fade in smoothly.
+2. **Phase 2: Typographic Reveal**: The brand title `"Sunetra"` and tagline `"Autonomous Retinal Tele-Ophthalmology Screening System"` fade in smoothly.
 3. **Phase 3: System Calibration & Edge Online Handshake**: Verifies edge computing node status and displays telemetry status badges.
 4. **Phase 4: Fluid Glide to Top Navbar**: The brand element glides into the top navigation bar, unveiling the clean clinical landing interface.
 
@@ -328,20 +328,20 @@ To protect clinical health workers from overwhelming engineering knobs while pre
 ```
 DR/
 ├── README.md                                                  # Comprehensive project documentation
-├── Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx       # Primary Excel dossier (24,403 rows, 4 sheets)
-├── Sunetra_AI_24403_Retrained_Clinical_Predictions.csv        # Raw CSV prediction dataset (24,404 lines)
+├── Sunetra_24403_Retrained_Clinical_Predictions.xlsx       # Primary Excel dossier (24,403 rows, 4 sheets)
+├── Sunetra_24403_Retrained_Clinical_Predictions.csv        # Raw CSV prediction dataset (24,404 lines)
 ├── generate_24403_predictions_excel.py                        # Automated Python multi-cohort inference engine
 ├── vercel.json                                                # Vercel production build & deploy configuration
 ├── .gitignore                                                 # Root git ignore
 │
 ├── frontend/                                                  # Responsive Cloud & Edge Web Platform (Vite + React 18)
-│   ├── index.html                                             # Document entry point (Sunetra AI)
+│   ├── index.html                                             # Document entry point (Sunetra)
 │   ├── package.json                                           # Dependencies (react, lucide-react, tailwindcss, vite)
 │   ├── vite.config.js                                         # Vite build & asset configuration
 │   ├── tailwind.config.js                                     # Tailwind CSS utility configuration
 │   ├── postcss.config.js                                      # PostCSS plugins (tailwindcss, autoprefixer)
 │   ├── public/                                                # Static assets and sample fundus photographs
-│   │   ├── Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx # Direct web browser download file
+│   │   ├── Sunetra_24403_Retrained_Clinical_Predictions.xlsx # Direct web browser download file
 │   │   ├── assets/clinic_eye_exam.jpg                         # Slit-lamp examination clinical photography
 │   │   └── samples/                                           # 19 Ground-Truth calibrated sample fundus images
 │   └── src/
@@ -404,7 +404,7 @@ DR/
     │   ├── export_edge_pipeline.m                             # MATLAB Coder C/C++ export for NVIDIA Jetson Orin Nano
     │   └── benchmark_edge_latency.m                           # Edge execution latency profiler (186.4 ms)
     └── reports/
-        ├── Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx # Mirror copy of full 24,403-image Excel dossier
+        ├── Sunetra_24403_Retrained_Clinical_Predictions.xlsx # Mirror copy of full 24,403-image Excel dossier
         └── clinician_report_PAT-TEST-FULL.pdf                 # Sample multi-page clinician audit report
 ```
 
@@ -482,7 +482,7 @@ To rerun the inference across all 24,403 images and regenerate the Excel workboo
 ```bash
 uv run --with openpyxl python generate_24403_predictions_excel.py
 ```
-This generates `Sunetra_AI_24403_Retrained_Clinical_Predictions.xlsx` and `.csv` in seconds.
+This generates `Sunetra_24403_Retrained_Clinical_Predictions.xlsx` and `.csv` in seconds.
 
 ### Running the MATLAB Pipeline (Headless Engine)
 ```matlab
@@ -550,6 +550,6 @@ Compiled assets will be saved to `frontend/dist/`.
 ---
 
 <p align="center">
-  <b>Sunetra AI (सुनेत्रा AI)</b> • <i>Protecting Vision Through Edge-Native Artificial Intelligence</i><br>
+  <b>Sunetra (सुनेत्रा)</b> • <i>Protecting Vision Through Edge-Native Intelligence</i><br>
   Built with ❤️ for rural healthcare equity in India.
 </p>

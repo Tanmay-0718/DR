@@ -507,7 +507,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
                   <div>
                     <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">
-                      Diagnostic Clinical Dossier &bull; Sunetra Autonomous AI
+                      Diagnostic Clinical Dossier &bull; Sunetra Autonomous Diagnostics
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-slate-100 mt-0.5">
                       {patientData.name} ({patientData.gender}, {patientData.age}y) &bull; Eye: {patientData.eye}
