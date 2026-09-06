@@ -5,8 +5,6 @@ import {
   Eye, 
   Activity, 
   CheckCircle2, 
-  Clock, 
-  Cpu, 
   AlertCircle,
   FileText,
   Lock,
@@ -148,41 +146,6 @@ export default function ClinicalLandingView({ onStartScreening, onOpenDevLogin }
                 <span>Site Support / Dev Access</span>
               </button>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Metrics Bar at Bottom */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-800/80 text-xs">
-        <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center space-x-3">
-          <Clock className="h-5 w-5 text-cyan-400 shrink-0" />
-          <div>
-            <div className="font-mono font-bold text-slate-200 text-sm">&lt; 200 ms</div>
-            <div className="text-[10px] text-slate-400">Edge Diagnostic Latency</div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center space-x-3">
-          <Activity className="h-5 w-5 text-emerald-400 shrink-0" />
-          <div>
-            <div className="font-mono font-bold text-slate-200 text-sm">92.6%</div>
-            <div className="text-[10px] text-slate-400">Referable DR Sensitivity</div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center space-x-3">
-          <Cpu className="h-5 w-5 text-indigo-400 shrink-0" />
-          <div>
-            <div className="font-mono font-bold text-slate-200 text-sm">3.2 KB</div>
-            <div className="text-[10px] text-slate-400">2G Rural Telemetry Packet</div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center space-x-3">
-          <ShieldCheck className="h-5 w-5 text-sky-400 shrink-0" />
-          <div>
-            <div className="font-mono font-bold text-slate-200 text-sm">Zero Cloud</div>
-            <div className="text-[10px] text-slate-400">100% Autonomous Edge AI</div>
           </div>
         </div>
       </div>
