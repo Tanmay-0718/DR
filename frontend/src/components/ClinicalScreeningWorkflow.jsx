@@ -470,13 +470,19 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
         <div className="no-print space-y-6">
           {/* Dual Bilateral Upload Zone (OD Right Eye and OS Left Eye) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Right Eye (OD) Upload Box */}
-            <div className="border-2 border-dashed border-slate-700 hover:border-cyan-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 group">
-              <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+            {/* Right Eye (OD) Upload Card */}
+            <label className="border-2 border-dashed border-slate-700 hover:border-cyan-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 cursor-pointer group">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleFileUpload(e, 'OD')}
+                className="hidden" 
+              />
+              <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 group-hover:bg-cyan-500/25 text-cyan-400 group-hover:text-cyan-300 border border-cyan-500/30 group-hover:border-cyan-400 flex items-center justify-center group-hover:scale-110 transition-all shadow-md">
                 <Eye className="h-7 w-7" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5">
+                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5 group-hover:text-cyan-300 transition-colors">
                   <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block"></span>
                   <span>Right Eye (OD &bull; Oculus Dexter)</span>
                 </h4>
@@ -484,24 +490,24 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                   Standard 45° macula-centered retinal photograph for the right eye.
                 </p>
               </div>
-              <label className="px-5 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow-md shadow-cyan-600/20 transition-all">
-                <span>Upload Right Eye (OD)</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => handleFileUpload(e, 'OD')}
-                  className="hidden" 
-                />
-              </label>
-            </div>
+              <div className="px-5 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 group-hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/20 transition-all">
+                Upload Right Eye (OD)
+              </div>
+            </label>
 
-            {/* Left Eye (OS) Upload Box */}
-            <div className="border-2 border-dashed border-slate-700 hover:border-sky-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 group">
-              <div className="h-14 w-14 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/30 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+            {/* Left Eye (OS) Upload Card */}
+            <label className="border-2 border-dashed border-slate-700 hover:border-sky-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 cursor-pointer group">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleFileUpload(e, 'OS')}
+                className="hidden" 
+              />
+              <div className="h-14 w-14 rounded-2xl bg-sky-500/10 group-hover:bg-sky-500/25 text-sky-400 group-hover:text-sky-300 border border-sky-500/30 group-hover:border-sky-400 flex items-center justify-center group-hover:scale-110 transition-all shadow-md">
                 <Eye className="h-7 w-7" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5">
+                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5 group-hover:text-sky-300 transition-colors">
                   <span className="h-2.5 w-2.5 rounded-full bg-sky-400 inline-block"></span>
                   <span>Left Eye (OS &bull; Oculus Sinister)</span>
                 </h4>
@@ -509,16 +515,10 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                   Standard 45° macula-centered retinal photograph for the left eye.
                 </p>
               </div>
-              <label className="px-5 py-2.5 rounded-xl font-bold text-xs bg-sky-600 hover:bg-sky-500 text-white cursor-pointer shadow-md shadow-sky-600/20 transition-all">
-                <span>Upload Left Eye (OS)</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => handleFileUpload(e, 'OS')}
-                  className="hidden" 
-                />
-              </label>
-            </div>
+              <div className="px-5 py-2.5 rounded-xl font-bold text-xs bg-sky-600 group-hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 transition-all">
+                Upload Left Eye (OS)
+              </div>
+            </label>
           </div>
 
           {/* Quick preset selector tray */}
