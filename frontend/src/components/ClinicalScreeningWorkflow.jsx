@@ -413,82 +413,91 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
                   </div>
                 </div>
 
-                {/* Interactive Retinal Viewer & Biomarker Summary Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-                  {/* Left: Retinal Image with Overlays */}
-                  <div className="lg:col-span-7 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
-                        <Eye className="h-3.5 w-3.5 text-cyan-400" />
-                        <span>Fundus Visualizer</span>
-                      </span>
-                      <span className="font-mono text-[11px] text-slate-500">
-                        {patientData.eye === 'OD' ? 'Right Eye (OD)' : 'Left Eye (OS)'}
-                      </span>
-                    </div>
-
-                    <SegmentationViewer 
-                      imageUrl={currentImage}
-                      segmentationData={pipelineResult}
-                      gradcamActive={gradcamActive}
-                      setGradcamActive={setGradcamActive}
-                      grade={pipelineResult.icdr_grade}
-                    />
+                {/* 1. Fundus Visualizer (Model 2: Anatomy & Lesion Multi-Head Segmentation) */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                      <Eye className="h-3.5 w-3.5 text-cyan-400" />
+                      <span>Fundus Visualizer</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-500">
+                      {patientData.eye === 'OD' ? 'Right Eye (OD)' : 'Left Eye (OS)'}
+                    </span>
                   </div>
 
-                  {/* Right: Quantitative Biomarkers Table */}
-                  <div className="lg:col-span-5 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
-                        <Layers className="h-3.5 w-3.5 text-indigo-400" />
-                        <span>Clinical Biomarkers</span>
-                      </span>
-                      <span className="font-mono text-[10px] text-emerald-400">18-d Vector</span>
-                    </div>
+                  <SegmentationViewer 
+                    imageUrl={currentImage}
+                    segmentationData={pipelineResult}
+                    gradcamActive={gradcamActive}
+                    setGradcamActive={setGradcamActive}
+                    grade={pipelineResult.icdr_grade}
+                  />
+                </div>
 
-                    <div className="bg-slate-950/80 rounded-xl border border-slate-800 divide-y divide-slate-850 text-xs">
-                      <div className="p-2.5 flex items-center justify-between">
+                {/* 2. Clinical Biomarkers (Positioned Under Model 2) */}
+                <div className="space-y-3 pt-4 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                      <Layers className="h-3.5 w-3.5 text-indigo-400" />
+                      <span>Clinical Biomarkers</span>
+                    </span>
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      18-Dimensional Phenotype Vector
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950/80 rounded-xl border border-slate-800 p-4 shadow-inner">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
                         <span className="text-slate-400">Microaneurysms (MAs):</span>
                         <span className="font-mono font-bold text-slate-200">{pipelineResult.lesions?.ma_count || 0}</span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
                         <span className="text-slate-400">Intraretinal Hemorrhages:</span>
                         <span className="font-mono font-bold text-slate-200">{pipelineResult.lesions?.hem_count || 0}</span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
-                        <span className="text-slate-400">Hard Exudates Area (%):</span>
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
+                        <span className="text-slate-400">Hard Exudates Area:</span>
                         <span className="font-mono font-bold text-slate-200">{(pipelineResult.lesions?.exudate_area_pct || 0).toFixed(2)}%</span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
                         <span className="text-slate-400">Cotton Wool Spots (CWS):</span>
                         <span className="font-mono font-bold text-slate-200">{pipelineResult.lesions?.cotton_wool_spots || 0}</span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
                         <span className="text-slate-400">Neovascularization (PDR):</span>
                         <span className={`font-mono font-bold ${pipelineResult.lesions?.has_nv ? 'text-rose-400' : 'text-slate-400'}`}>
                           {pipelineResult.lesions?.has_nv ? 'Detected (Active NV)' : 'Absent'}
                         </span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
                         <span className="text-slate-400">PRP Retinal Laser Scars:</span>
                         <span className={`font-mono font-bold ${pipelineResult.lesions?.has_retinal_scarring ? 'text-amber-400' : 'text-slate-400'}`}>
                           {pipelineResult.lesions?.has_retinal_scarring ? `${pipelineResult.lesions.scar_count || 28} Burns` : 'Absent'}
                         </span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
-                        <span className="text-slate-400">Venous Beading (ETDRS Rule 2):</span>
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
+                        <span className="text-slate-400">Venous Beading (Rule 2):</span>
                         <span className={`font-mono font-bold ${pipelineResult.lesions?.has_vb ? 'text-orange-400' : 'text-slate-400'}`}>
                           {pipelineResult.lesions?.has_vb ? `Present (${pipelineResult.lesions?.vb_quad_count || 2} Quads)` : 'Absent'}
                         </span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between">
+
+                      <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800/80 flex items-center justify-between">
                         <span className="text-slate-400">IRMA Shunt Vessels (Rule 1):</span>
                         <span className={`font-mono font-bold ${pipelineResult.lesions?.has_irma ? 'text-purple-400' : 'text-slate-400'}`}>
                           {pipelineResult.lesions?.has_irma ? `Present (${pipelineResult.lesions?.irma_count || 2} Shunts)` : 'Absent'}
                         </span>
                       </div>
-                      <div className="p-2.5 flex items-center justify-between bg-slate-900/60">
-                        <span className="text-slate-300 font-semibold">ETDRS 4-2-1 Status:</span>
+
+                      <div className="p-3 rounded-lg bg-cyan-950/40 border border-cyan-500/40 flex items-center justify-between shadow-sm">
+                        <span className="text-cyan-200 font-semibold">ETDRS 4-2-1 Status:</span>
                         <span className="font-mono font-bold text-cyan-300">
                           {pipelineResult.etdrs_421?.score || 0}/3 Criteria Met
                         </span>
