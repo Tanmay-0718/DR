@@ -228,75 +228,6 @@ export default function XAIReport({
         </div>
       </div>
 
-      {/* On-Screen Patient-Friendly Summary Section (Short & Precise) */}
-      <div className="no-print bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-4 rounded-xl border border-cyan-500/30 shadow-lg space-y-3">
-        <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
-          <div className="flex items-center space-x-2">
-            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              <HeartPulse className="h-4 w-4" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-slate-100 uppercase tracking-wider block">
-                Patient-Friendly Summary &bull; सरल सारांश
-              </span>
-              <span className="text-[11px] text-slate-400">
-                Short and precise explanation written in plain language for patients and family
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
-              icdr_grade >= 3 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
-              icdr_grade === 2 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
-              icdr_grade === 1 ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
-              'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-            }`}>
-              {plainSummary.statusBadge}
-            </span>
-            <span className="text-xs font-mono font-semibold text-cyan-300 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/60">
-              {plainSummary.timeline}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
-            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
-              1. What The Scan Found (जांच में क्या दिखा)
-            </span>
-            <p className="text-slate-300 leading-relaxed font-medium">
-              {plainSummary.explanation}
-            </p>
-          </div>
-
-          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
-            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
-              2. What This Means For Your Vision (आंखों की सुरक्षा)
-            </span>
-            <p className="text-slate-300 leading-relaxed font-medium">
-              {plainSummary.meaning}
-            </p>
-            <div className="text-[11px] font-bold text-slate-200 pt-1 border-t border-slate-800/80">
-              Status: <span className="text-cyan-300">{plainSummary.visionSafety}</span>
-            </div>
-          </div>
-
-          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
-              3. Next Step Required (अब क्या करना चाहिए)
-            </span>
-            <p className="text-slate-100 font-semibold leading-relaxed">
-              {plainSummary.actionRequired}
-            </p>
-          </div>
-        </div>
-
-        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/60 flex items-center justify-between">
-          <span>💡 <strong>Healthy Eye Tip:</strong> {plainSummary.keyTips[0]}</span>
-          <span className="text-slate-500 font-mono text-[10px]">Zero medical jargon &bull; Plain English</span>
-        </div>
-      </div>
-
       {/* On-Screen Bilateral Retinal Photography (Right Eye OD & Left Eye OS) */}
       <div className="no-print bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
         <div className="flex items-center justify-between">
@@ -369,6 +300,75 @@ export default function XAIReport({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* On-Screen Patient-Friendly Summary Section (Placed at the end of the report) */}
+      <div className="no-print bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-4 rounded-xl border border-cyan-500/30 shadow-lg space-y-3">
+        <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              <HeartPulse className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-slate-100 uppercase tracking-wider block">
+                Patient-Friendly Summary &bull; सरल सारांश
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Short and precise explanation written in plain language for patients and family
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
+              icdr_grade >= 3 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+              icdr_grade === 2 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+              icdr_grade === 1 ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
+              'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+            }`}>
+              {plainSummary.statusBadge}
+            </span>
+            <span className="text-xs font-mono font-semibold text-cyan-300 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/60">
+              {plainSummary.timeline}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+              1. What The Scan Found (जांच में क्या दिखा)
+            </span>
+            <p className="text-slate-300 leading-relaxed font-medium">
+              {plainSummary.explanation}
+            </p>
+          </div>
+
+          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
+              2. What This Means For Your Vision (आंखों की सुरक्षा)
+            </span>
+            <p className="text-slate-300 leading-relaxed font-medium">
+              {plainSummary.meaning}
+            </p>
+            <div className="text-[11px] font-bold text-slate-200 pt-1 border-t border-slate-800/80">
+              Status: <span className="text-cyan-300">{plainSummary.visionSafety}</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+              3. Next Step Required (अब क्या करना चाहिए)
+            </span>
+            <p className="text-slate-100 font-semibold leading-relaxed">
+              {plainSummary.actionRequired}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/60 flex items-center justify-between">
+          <span>💡 <strong>Healthy Eye Tip:</strong> {plainSummary.keyTips[0]}</span>
+          <span className="text-slate-500 font-mono text-[10px]">Zero medical jargon &bull; Plain English</span>
         </div>
       </div>
 
@@ -609,67 +609,6 @@ export default function XAIReport({
         </div>
 
         {/* ========================================================================= */}
-        {/* EXTRA SUMMARY SECTION FOR PATIENT / FAMILY (PLAIN-LANGUAGE SUMMARY)        */}
-        {/* ========================================================================= */}
-        <div className="my-3 p-3.5 rounded-lg border-2 border-slate-700 bg-slate-50 text-slate-900">
-          <div className="flex flex-wrap items-center justify-between border-b border-slate-300 pb-2 mb-2.5 gap-2">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center space-x-1.5">
-                <span>📋 PATIENT &amp; FAMILY SUMMARY &bull; PLAIN-LANGUAGE EXPLANATION (सरल सारांश)</span>
-              </span>
-              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase border ${
-                icdr_grade >= 3 ? 'bg-rose-100 text-rose-800 border-rose-400' :
-                icdr_grade === 2 ? 'bg-amber-100 text-amber-800 border-amber-400' :
-                icdr_grade === 1 ? 'bg-blue-100 text-blue-800 border-blue-400' :
-                'bg-emerald-100 text-emerald-800 border-emerald-400'
-              }`}>
-                {plainSummary.statusBadge}
-              </span>
-            </div>
-            <span className="text-[11px] font-bold text-slate-800 font-mono">
-              Action Timeline: <span className="underline">{plainSummary.timeline}</span>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
-              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
-                1. What The Scan Found (जांच में क्या दिखा)
-              </span>
-              <p className="text-slate-800 font-medium leading-relaxed">
-                {plainSummary.explanation}
-              </p>
-            </div>
-
-            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
-              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
-                2. What This Means For Your Vision (आंखों की सुरक्षा)
-              </span>
-              <p className="text-slate-800 font-medium leading-relaxed">
-                {plainSummary.meaning}
-              </p>
-              <div className="text-[11px] font-bold text-slate-900 pt-1 border-t border-slate-200">
-                Risk Level: <span>{plainSummary.visionSafety}</span>
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
-              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
-                3. What You Should Do Next (अब क्या करना चाहिए)
-              </span>
-              <p className="text-slate-950 font-bold leading-relaxed">
-                {plainSummary.actionRequired}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-2 pt-1.5 border-t border-slate-300 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
-            <span>💡 <strong>Doctor's Advice:</strong> {plainSummary.keyTips[0]}</span>
-            <span className="text-slate-500 italic">Short and precise summary &bull; Easily understood by non-medical readers</span>
-          </div>
-        </div>
-
-        {/* ========================================================================= */}
         {/* BILATERAL DIGITAL FUNDUS PHOTOGRAPHS (LEFT EYE & RIGHT EYE)                */}
         {/* ========================================================================= */}
         <div className="my-3 p-3 rounded-lg border border-slate-300 bg-slate-50">
@@ -849,6 +788,68 @@ export default function XAIReport({
               <li className="text-slate-800 font-semibold"><strong>Post-PRP Monitoring:</strong> Evaluate chorioretinal laser scar density and rule out recurrent neovascularization or epiretinal membrane formation.</li>
             )}
           </ul>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* EXTRA SUMMARY SECTION FOR PATIENT / FAMILY (PLAIN-LANGUAGE SUMMARY)        */}
+        {/* Placed at the end of the report so non-medical readers have a crisp recap */}
+        {/* ========================================================================= */}
+        <div className="my-3.5 p-3.5 rounded-lg border-2 border-slate-700 bg-slate-50 text-slate-900">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-300 pb-2 mb-2.5 gap-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center space-x-1.5">
+                <span>📋 PATIENT &amp; FAMILY SUMMARY &bull; PLAIN-LANGUAGE EXPLANATION (सरल सारांश)</span>
+              </span>
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase border ${
+                icdr_grade >= 3 ? 'bg-rose-100 text-rose-800 border-rose-400' :
+                icdr_grade === 2 ? 'bg-amber-100 text-amber-800 border-amber-400' :
+                icdr_grade === 1 ? 'bg-blue-100 text-blue-800 border-blue-400' :
+                'bg-emerald-100 text-emerald-800 border-emerald-400'
+              }`}>
+                {plainSummary.statusBadge}
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 font-mono">
+              Action Timeline: <span className="underline">{plainSummary.timeline}</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
+                1. What The Scan Found (जांच में क्या दिखा)
+              </span>
+              <p className="text-slate-800 font-medium leading-relaxed">
+                {plainSummary.explanation}
+              </p>
+            </div>
+
+            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
+                2. What This Means For Your Vision (आंखों की सुरक्षा)
+              </span>
+              <p className="text-slate-800 font-medium leading-relaxed">
+                {plainSummary.meaning}
+              </p>
+              <div className="text-[11px] font-bold text-slate-900 pt-1 border-t border-slate-200">
+                Risk Level: <span>{plainSummary.visionSafety}</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 bg-white rounded-md border border-slate-300 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">
+                3. What You Should Do Next (अब क्या करना चाहिए)
+              </span>
+              <p className="text-slate-950 font-bold leading-relaxed">
+                {plainSummary.actionRequired}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-2 pt-1.5 border-t border-slate-300 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+            <span>💡 <strong>Doctor's Advice:</strong> {plainSummary.keyTips[0]}</span>
+            <span className="text-slate-500 italic">Short and precise summary &bull; Easily understood by non-medical readers</span>
+          </div>
         </div>
 
         {/* Official Doctor's Signature Block */}
