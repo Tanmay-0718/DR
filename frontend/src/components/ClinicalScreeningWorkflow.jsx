@@ -17,10 +17,12 @@ import {
   HeartPulse,
   Info,
   Clock,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import { SAMPLE_CATALOG, runFullPipeline } from '../utils/imageProcessing';
 import SegmentationViewer from './SegmentationViewer';
+import GradingCard from './GradingCard';
 import XAIReport from './XAIReport';
 
 export default function ClinicalScreeningWorkflow({ onBackToHome }) {
@@ -44,16 +46,25 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
   const [gradcamActive, setGradcamActive] = useState(false);
   const [showPrintReport, setShowPrintReport] = useState(false);
 
+  // Clinician override states
+  const [clinicianOverrideGrade, setClinicianOverrideGrade] = useState(null);
+  const [clinicianConfirmedNV, setClinicianConfirmedNV] = useState(null);
+  const [clinicianConfirmedScarring, setClinicianConfirmedScarring] = useState(null);
+  const [clinicianConfirmedCWS, setClinicianConfirmedCWS] = useState(null);
+  const [clinicianConfirmedIRMA, setClinicianConfirmedIRMA] = useState(null);
+  const [clinicianConfirmedVB, setClinicianConfirmedVB] = useState(null);
+
   // Generate random Patient ID
   const handleGenerateId = () => {
     const num = Math.floor(1000 + Math.random() * 9000);
     setPatientData(prev => ({ ...prev, patientId: `SUN-2026-${num}` }));
   };
 
+  const currentImage = selectedSample ? selectedSample.path : uploadedImageSrc;
+
   // Execute pipeline
-  const processImage = async (src, sample = null, fName = '') => {
+  const processImage = async (src, sample = null, fName = '', overrideOpts = {}) => {
     setIsProcessing(true);
-    setPipelineResult(null);
 
     // Create an image element to read canvas pixels
     const img = new Image();
@@ -63,7 +74,7 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
     img.onload = async () => {
       try {
         const sampleId = sample ? sample.id : null;
-        const result = await runFullPipeline(img, sampleId, fName);
+        const result = await runFullPipeline(img, sampleId, fName, overrideOpts);
         setPipelineResult(result);
       } catch (err) {
         console.error('Screening pipeline execution error:', err);
@@ -77,6 +88,126 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
     };
   };
 
+  // Clinician override toggle handlers
+  const handleToggleNV = () => {
+    if (!pipelineResult) return;
+    const currentNV = pipelineResult.lesions ? pipelineResult.lesions.has_nv : false;
+    const nextNV = !currentNV;
+    setClinicianConfirmedNV(nextNV);
+    const nextGrade = nextNV ? 4 : (clinicianOverrideGrade !== null ? clinicianOverrideGrade : undefined);
+    processImage(
+      currentImage, 
+      selectedSample, 
+      fileName, 
+      { 
+        hasNV: nextNV,
+        hasRetinalScarring: clinicianConfirmedScarring !== null ? clinicianConfirmedScarring : pipelineResult.lesions?.has_retinal_scarring,
+        hasCWS: clinicianConfirmedCWS !== null ? clinicianConfirmedCWS : pipelineResult.lesions?.has_cws,
+        hasIRMA: clinicianConfirmedIRMA !== null ? clinicianConfirmedIRMA : pipelineResult.lesions?.has_irma,
+        hasVB: clinicianConfirmedVB !== null ? clinicianConfirmedVB : pipelineResult.lesions?.has_vb,
+        grade: nextGrade 
+      }
+    );
+  };
+
+  const handleToggleScarring = () => {
+    if (!pipelineResult) return;
+    const currentScar = pipelineResult.lesions ? pipelineResult.lesions.has_retinal_scarring : false;
+    const nextScar = !currentScar;
+    setClinicianConfirmedScarring(nextScar);
+    const nextGrade = nextScar ? 4 : (clinicianOverrideGrade !== null ? clinicianOverrideGrade : undefined);
+    processImage(
+      currentImage,
+      selectedSample,
+      fileName,
+      {
+        hasNV: clinicianConfirmedNV !== null ? clinicianConfirmedNV : pipelineResult.lesions?.has_nv,
+        hasRetinalScarring: nextScar,
+        hasCWS: clinicianConfirmedCWS !== null ? clinicianConfirmedCWS : pipelineResult.lesions?.has_cws,
+        hasIRMA: clinicianConfirmedIRMA !== null ? clinicianConfirmedIRMA : pipelineResult.lesions?.has_irma,
+        hasVB: clinicianConfirmedVB !== null ? clinicianConfirmedVB : pipelineResult.lesions?.has_vb,
+        grade: nextGrade
+      }
+    );
+  };
+
+  const handleToggleCWS = () => {
+    if (!pipelineResult) return;
+    const currentCWS = pipelineResult.lesions ? pipelineResult.lesions.has_cws : false;
+    const nextCWS = !currentCWS;
+    setClinicianConfirmedCWS(nextCWS);
+    processImage(
+      currentImage,
+      selectedSample,
+      fileName,
+      {
+        hasNV: clinicianConfirmedNV !== null ? clinicianConfirmedNV : pipelineResult.lesions?.has_nv,
+        hasRetinalScarring: clinicianConfirmedScarring !== null ? clinicianConfirmedScarring : pipelineResult.lesions?.has_retinal_scarring,
+        hasCWS: nextCWS,
+        hasIRMA: clinicianConfirmedIRMA !== null ? clinicianConfirmedIRMA : pipelineResult.lesions?.has_irma,
+        hasVB: clinicianConfirmedVB !== null ? clinicianConfirmedVB : pipelineResult.lesions?.has_vb,
+        grade: clinicianOverrideGrade !== null ? clinicianOverrideGrade : undefined
+      }
+    );
+  };
+
+  const handleToggleIRMA = () => {
+    if (!pipelineResult) return;
+    const currentIRMA = pipelineResult.lesions ? pipelineResult.lesions.has_irma : false;
+    const nextIRMA = !currentIRMA;
+    setClinicianConfirmedIRMA(nextIRMA);
+    processImage(
+      currentImage,
+      selectedSample,
+      fileName,
+      {
+        hasNV: clinicianConfirmedNV !== null ? clinicianConfirmedNV : pipelineResult.lesions?.has_nv,
+        hasRetinalScarring: clinicianConfirmedScarring !== null ? clinicianConfirmedScarring : pipelineResult.lesions?.has_retinal_scarring,
+        hasCWS: clinicianConfirmedCWS !== null ? clinicianConfirmedCWS : pipelineResult.lesions?.has_cws,
+        hasIRMA: nextIRMA,
+        hasVB: clinicianConfirmedVB !== null ? clinicianConfirmedVB : pipelineResult.lesions?.has_vb,
+        grade: clinicianOverrideGrade !== null ? clinicianOverrideGrade : undefined
+      }
+    );
+  };
+
+  const handleToggleVB = () => {
+    const currentVB = clinicianConfirmedVB !== null ? clinicianConfirmedVB : Boolean(pipelineResult?.lesions?.has_vb);
+    const nextVB = !currentVB;
+    setClinicianConfirmedVB(nextVB);
+    processImage(
+      currentImage,
+      selectedSample,
+      fileName,
+      {
+        hasNV: clinicianConfirmedNV !== null ? clinicianConfirmedNV : pipelineResult?.lesions?.has_nv,
+        hasRetinalScarring: clinicianConfirmedScarring !== null ? clinicianConfirmedScarring : pipelineResult?.lesions?.has_retinal_scarring,
+        hasCWS: clinicianConfirmedCWS !== null ? clinicianConfirmedCWS : pipelineResult?.lesions?.has_cws,
+        hasIRMA: clinicianConfirmedIRMA !== null ? clinicianConfirmedIRMA : pipelineResult?.lesions?.has_irma,
+        hasVB: nextVB,
+        grade: clinicianOverrideGrade !== null ? clinicianOverrideGrade : undefined
+      }
+    );
+  };
+
+  const handleOverrideGrade = (gradeVal) => {
+    setClinicianOverrideGrade(gradeVal);
+    const nvVal = gradeVal === 4 ? true : (gradeVal === 0 ? false : (clinicianConfirmedNV !== null ? clinicianConfirmedNV : undefined));
+    processImage(
+      currentImage, 
+      selectedSample, 
+      fileName, 
+      { 
+        grade: gradeVal, 
+        hasNV: nvVal,
+        hasRetinalScarring: clinicianConfirmedScarring !== null ? clinicianConfirmedScarring : pipelineResult?.lesions?.has_retinal_scarring,
+        hasCWS: clinicianConfirmedCWS !== null ? clinicianConfirmedCWS : pipelineResult?.lesions?.has_cws,
+        hasIRMA: clinicianConfirmedIRMA !== null ? clinicianConfirmedIRMA : pipelineResult?.lesions?.has_irma,
+        hasVB: clinicianConfirmedVB !== null ? clinicianConfirmedVB : pipelineResult?.lesions?.has_vb
+      }
+    );
+  };
+
   // Handle custom upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -84,11 +215,17 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
       const name = file.name;
       setFileName(name);
       setSelectedSample(null);
+      setClinicianOverrideGrade(null);
+      setClinicianConfirmedNV(null);
+      setClinicianConfirmedScarring(null);
+      setClinicianConfirmedCWS(null);
+      setClinicianConfirmedIRMA(null);
+      setClinicianConfirmedVB(null);
       const reader = new FileReader();
       reader.onload = (ev) => {
         const src = ev.target.result;
         setUploadedImageSrc(src);
-        processImage(src, null, name);
+        processImage(src, null, name, {});
       };
       reader.readAsDataURL(file);
     }
@@ -99,7 +236,13 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
     setSelectedSample(sample);
     setUploadedImageSrc(sample.path);
     setFileName(sample.title);
-    processImage(sample.path, sample, sample.title);
+    setClinicianOverrideGrade(null);
+    setClinicianConfirmedNV(null);
+    setClinicianConfirmedScarring(null);
+    setClinicianConfirmedCWS(null);
+    setClinicianConfirmedIRMA(null);
+    setClinicianConfirmedVB(null);
+    processImage(sample.path, sample, sample.title, {});
   };
 
   // Reset for next patient
@@ -109,10 +252,14 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
     setFileName('');
     setPipelineResult(null);
     setShowPrintReport(false);
+    setClinicianOverrideGrade(null);
+    setClinicianConfirmedNV(null);
+    setClinicianConfirmedScarring(null);
+    setClinicianConfirmedCWS(null);
+    setClinicianConfirmedIRMA(null);
+    setClinicianConfirmedVB(null);
     handleGenerateId();
   };
-
-  const currentImage = selectedSample ? selectedSample.path : uploadedImageSrc;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto py-2">
@@ -325,6 +472,269 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
       {/* DIAGNOSTIC RESULTS DISPLAY */}
       {pipelineResult && !isProcessing && (
         <div className="space-y-6">
+          {/* Preset Clinical Test Cases Selection Tray & Clinician Triage Control Bar (Image 2) */}
+          <div className="no-print space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                <span>Preset Clinical Test Cases</span>
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Ground-Truth Calibrated Across APTOS 2019 &amp; IDRiD</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+              {SAMPLE_CATALOG.map((sample) => {
+                const isSelected = selectedSample?.id === sample.id;
+                return (
+                  <button
+                    key={sample.id}
+                    onClick={() => handleSelectSample(sample)}
+                    className={`p-2 rounded-xl border text-left transition-all flex flex-col justify-between group ${
+                      isSelected 
+                        ? 'bg-slate-800 border-cyan-500 shadow-md ring-1 ring-cyan-500/50' 
+                        : 'bg-slate-950/80 hover:bg-slate-800/80 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[10px] font-mono font-bold px-1 rounded ${
+                        sample.grade !== null 
+                          ? (sample.isReferable ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300')
+                          : 'bg-amber-500/20 text-amber-300'
+                      }`}>
+                        {sample.grade !== null ? `Gr ${sample.grade}` : 'IQA Gate'}
+                      </span>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>}
+                    </div>
+                    <div className="text-[11px] font-semibold text-slate-200 line-clamp-1">
+                      {sample.title.split(':')[0]}
+                    </div>
+                    <div className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+                      {sample.title.split(':')[1] || sample.subtitle}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Clinician Review & Dynamic Triage Control Bar */}
+            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-3 shadow-md">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center space-x-2.5">
+                  <div className={`p-1.5 rounded-lg border ${
+                    pipelineResult && !pipelineResult.is_gradable
+                      ? 'bg-rose-950/60 border-rose-500/60 text-rose-400'
+                      : (pipelineResult?.lesions?.has_nv || pipelineResult?.lesions?.has_retinal_scarring
+                        ? 'bg-rose-950/60 border-rose-500/60 text-rose-400' 
+                        : 'bg-cyan-950/60 border-cyan-500/60 text-cyan-400')
+                  }`}>
+                    <ShieldAlert className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-slate-200">
+                        {uploadedImageSrc && !selectedSample ? `Custom Retinal Upload: ${fileName || 'Fundus Image'}` : `Case: ${selectedSample?.title || 'Selected Sample'}`}
+                      </span>
+                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                        pipelineResult && !pipelineResult.is_gradable
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                          : (pipelineResult?.lesions?.has_nv 
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
+                            : 'bg-slate-800 text-slate-400 border-slate-700')
+                      }`}>
+                        {pipelineResult && !pipelineResult.is_gradable
+                          ? (pipelineResult.iqa_reason === 'non_fundus' ? 'REJECTED: NON-FUNDUS / OOD' : `REJECTED: ${pipelineResult.iqa_reason?.toUpperCase()}`)
+                          : (pipelineResult?.lesions?.has_nv ? 'PDR • Neovascularization (NV) Active' : 'Non-Proliferative / No NV')}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      {pipelineResult && !pipelineResult.is_gradable ? (
+                        <span className="text-rose-300">
+                          Status: <strong className="font-semibold">{pipelineResult.iqa_reason === 'non_fundus' ? 'Non-Retinal Image Detected' : 'Ungradable Quality'}</strong> &bull; Pipeline Short-Circuited
+                        </span>
+                      ) : (
+                        <>
+                          Diagnostic Finding: <span className="font-semibold text-slate-200">{pipelineResult?.class_info?.name || 'Graded'}</span>
+                          {pipelineResult?.confidence ? ` (${(pipelineResult.confidence * 100).toFixed(1)}% Calibrated Conf)` : ''}
+                          {pipelineResult?.referable_dr ? ' • REFERABLE' : ' • Routine Annual'}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clinician Severity Override Selector */}
+                {pipelineResult && !pipelineResult.is_gradable ? (
+                  <div className="flex items-center space-x-1.5 bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-500/40 text-[11px] text-rose-300 font-mono">
+                    <span>Short-Circuit Guard: Halted</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-[11px]">
+                    <span className="text-slate-500 px-1 text-[10px] uppercase tracking-wider font-semibold">Triage:</span>
+                    {[
+                      { g: null, label: 'Auto (AI)' },
+                      { g: 0, label: 'Gr 0' },
+                      { g: 1, label: 'Gr 1' },
+                      { g: 2, label: 'Gr 2' },
+                      { g: 3, label: 'Gr 3' },
+                      { g: 4, label: 'Gr 4 (PDR)' }
+                    ].map((btn) => {
+                      const isCurrent = (clinicianOverrideGrade === null && btn.g === null) || clinicianOverrideGrade === btn.g;
+                      return (
+                        <button
+                          key={btn.label}
+                          onClick={() => handleOverrideGrade(btn.g)}
+                          className={`px-2 py-0.5 rounded font-mono font-medium transition-all ${
+                            isCurrent 
+                              ? (btn.g === 4 ? 'bg-rose-600 text-white shadow-sm' : 'bg-cyan-600 text-white shadow-sm') 
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                          }`}
+                        >
+                          {btn.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Retinal Wall Biomarkers and Active Verification Toggles */}
+              {pipelineResult && pipelineResult.is_gradable && (
+                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mr-1">Retinal Wall Biomarkers:</span>
+                    
+                    {/* Scarring Badge */}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+                      pipelineResult?.lesions?.has_retinal_scarring
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                        : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_retinal_scarring ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                      <span>
+                        {pipelineResult?.lesions?.has_retinal_scarring 
+                          ? `Wall Scarring (${pipelineResult.lesions.scar_count || 28} Burns)` 
+                          : 'Wall Scarring: Absent'}
+                      </span>
+                    </span>
+
+                    {/* Cotton Wool Spots Badge */}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+                      pipelineResult?.lesions?.has_cws
+                        ? 'bg-sky-500/20 text-sky-300 border-sky-500/50'
+                        : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_cws ? 'bg-sky-400' : 'bg-slate-600'}`}></span>
+                      <span>{pipelineResult?.lesions?.has_cws ? `CWS: Present` : 'CWS: Absent'}</span>
+                    </span>
+
+                    {/* IRMA Badge */}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+                      pipelineResult?.lesions?.has_irma
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+                        : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_irma ? 'bg-purple-400' : 'bg-slate-600'}`}></span>
+                      <span>{pipelineResult?.lesions?.has_irma ? `IRMA: Present` : 'IRMA: Absent'}</span>
+                    </span>
+
+                    {/* Venous Beading Badge */}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+                      pipelineResult?.lesions?.has_vb
+                        ? 'bg-orange-500/20 text-orange-300 border-orange-500/50'
+                        : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_vb ? 'bg-orange-400' : 'bg-slate-600'}`}></span>
+                      <span>{pipelineResult?.lesions?.has_vb ? `VB: Present` : 'VB: Absent'}</span>
+                    </span>
+
+                    {/* ETDRS 4-2-1 Status Badge */}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+                      pipelineResult?.etdrs_421?.severe_npdr
+                        ? (pipelineResult?.etdrs_421?.very_severe_npdr 
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/50')
+                        : 'bg-slate-800/60 text-slate-500 border-slate-700/60'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        pipelineResult?.etdrs_421?.very_severe_npdr ? 'bg-rose-400' : (pipelineResult?.etdrs_421?.severe_npdr ? 'bg-amber-400' : 'bg-slate-600')
+                      }`}></span>
+                      <span>
+                        {pipelineResult?.etdrs_421?.severe_npdr 
+                          ? `ETDRS 4-2-1: MET (${pipelineResult?.etdrs_421?.criteria_met_count || 1}/3)` 
+                          : 'ETDRS 4-2-1: 0/3 Criteria'}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Clinician Toggles */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mr-1">Clinician Toggles:</span>
+                    
+                    <button
+                      onClick={handleToggleNV}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                        pipelineResult?.lesions?.has_nv
+                          ? 'bg-rose-950/80 border-rose-500/80 text-rose-200'
+                          : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_nv ? 'bg-rose-400 animate-ping' : 'bg-slate-600'}`}></span>
+                      <span>NV (PDR)</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleScarring}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                        pipelineResult?.lesions?.has_retinal_scarring
+                          ? 'bg-amber-950/80 border-amber-500/80 text-amber-200'
+                          : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_retinal_scarring ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                      <span>PRP Wall Scars</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleCWS}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                        pipelineResult?.lesions?.has_cws
+                          ? 'bg-sky-950/80 border-sky-500/80 text-sky-200'
+                          : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_cws ? 'bg-sky-400' : 'bg-slate-600'}`}></span>
+                      <span>CWS</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleIRMA}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                        pipelineResult?.lesions?.has_irma
+                          ? 'bg-purple-950/80 border-purple-500/80 text-purple-200'
+                          : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_irma ? 'bg-purple-400' : 'bg-slate-600'}`}></span>
+                      <span>IRMA</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleVB}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-all ${
+                        pipelineResult?.lesions?.has_vb
+                          ? 'bg-orange-950/80 border-orange-500/80 text-orange-200'
+                          : 'bg-slate-850 hover:bg-slate-800 border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${pipelineResult?.lesions?.has_vb ? 'bg-orange-400' : 'bg-slate-600'}`}></span>
+                      <span>VB (Rule 2)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* IF IMAGE IS UNGRADABLE (e.g. Non-fundus scenery / blur), SHOW REJECTION & RE-TRY */}
           {!pipelineResult.is_gradable ? (
             <div className="no-print p-6 rounded-2xl bg-rose-950/30 border border-rose-500/40 text-center space-y-4">
@@ -504,6 +914,11 @@ export default function ClinicalScreeningWorkflow({ onBackToHome }) {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* 3. Module 3: Fused Deep-Feature Clinical Grading (Image 3) */}
+                <div className="no-print pt-2">
+                  <GradingCard gradingData={pipelineResult} />
                 </div>
 
                 {/* Report Action Buttons */}
