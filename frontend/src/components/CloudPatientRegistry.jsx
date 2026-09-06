@@ -107,7 +107,7 @@ export default function CloudPatientRegistry({ onNavigateToScreening, onSelectPa
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bundle, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `Sunetra_FHIR_R4_Patient_Registry_${Date.now()}.json`);
+    downloadAnchor.setAttribute('download', `Chakshuh_FHIR_R4_Patient_Registry_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

@@ -5,13 +5,13 @@ import { Eye, ArrowRight, Sparkles } from 'lucide-react';
  * ClinicalEntranceAnimation
  * Implements the 4-step entrance animation sketched by user:
  * 1) Logo appears in center of screen with glowing pulse
- * 2) "Sunetra" brand title animates in beside/under logo
+ * 2) "Chakshuh" brand title animates in beside/under logo
  * 3) Logo and title glide smoothly up to the top side (navbar position)
  * 4) Triggers completion to reveal the main landing screen
  */
 export default function ClinicalEntranceAnimation({ onComplete, autoSkip = false }) {
   // Phase 1: Logo pulse in center (0..800ms)
-  // Phase 2: "Sunetra" text appears (800..2000ms)
+  // Phase 2: "Chakshuh" text appears (800..2000ms)
   // Phase 3: Glides to top side (2000..2850ms)
   // Phase 4: Done (2850ms+)
   const [phase, setPhase] = useState(1);
@@ -67,7 +67,7 @@ export default function ClinicalEntranceAnimation({ onComplete, autoSkip = false
           </div>
         </div>
 
-        {/* Step 2: "Sunetra" Text Animation */}
+        {/* Step 2: "Chakshuh" Text Animation */}
         <div 
           className={`transition-all duration-700 ease-out overflow-hidden flex flex-col justify-center ${
             phase >= 2 
@@ -77,11 +77,8 @@ export default function ClinicalEntranceAnimation({ onComplete, autoSkip = false
         >
           <div className="flex items-center space-x-2">
             <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none bg-gradient-to-r from-white via-cyan-100 to-cyan-400 bg-clip-text text-transparent">
-              Sunetra
+              Chakshuh
             </h1>
-            <span className="text-[10px] sm:text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
-              AI
-            </span>
           </div>
           <p className="text-[10px] sm:text-xs text-slate-400 font-medium tracking-wide mt-1 whitespace-nowrap">
             Autonomous Retinal Tele-Ophthalmology

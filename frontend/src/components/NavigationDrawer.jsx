@@ -485,7 +485,7 @@ export default function NavigationDrawer({
 
           {/* System Footer Note */}
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-            <span>Sunetra v2.4</span>
+            <span>Chakshuh v2.4</span>
             <span className="text-emerald-400/80 flex items-center space-x-1">
               <ShieldCheck className="h-3 w-3" />
               <span>MATLAB Core Intact</span>

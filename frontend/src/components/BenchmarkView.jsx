@@ -266,8 +266,8 @@ export default function BenchmarkView() {
           </div>
 
           <a
-            href="/Sunetra_24403_Retrained_Clinical_Predictions.xlsx"
-            download="Sunetra_24403_Retrained_Clinical_Predictions.xlsx"
+            href="/Chakshuh_24403_Retrained_Clinical_Predictions.xlsx"
+            download="Chakshuh_24403_Retrained_Clinical_Predictions.xlsx"
             className="px-4 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white flex items-center space-x-2 shadow-md hover:shadow-emerald-950/50 transition-all cursor-pointer"
             title="Download complete 24,403-image clinical validation spreadsheet"
           >

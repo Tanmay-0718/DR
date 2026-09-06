@@ -33,7 +33,7 @@ export default function Navbar({
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand Logo & Name: Sunetra */}
+          {/* Brand Logo & Name: Chakshuh */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={handleLogoClick}>
             <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/20">
               <Eye className="h-5 w-5 text-white" />
@@ -41,7 +41,7 @@ export default function Navbar({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-slate-100 tracking-tight text-lg">
-                  Sunetra
+                  Chakshuh
                 </span>
                 {isDevMode && (
                   <span className="hidden md:inline-flex items-center space-x-1 text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">

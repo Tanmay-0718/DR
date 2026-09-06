@@ -20,7 +20,7 @@ export default function App() {
   // Entrance animation state (plays once per session, with replay option)
   const [hasSeenAnimation, setHasSeenAnimation] = useState(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('sunetra_anim_seen') === 'true';
+      return sessionStorage.getItem('chakshuh_anim_seen') === 'true';
     }
     return false;
   });
@@ -36,14 +36,14 @@ export default function App() {
   const handleAnimationComplete = () => {
     setHasSeenAnimation(true);
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('sunetra_anim_seen', 'true');
+      sessionStorage.setItem('chakshuh_anim_seen', 'true');
     }
   };
 
   const handleReplayIntro = () => {
     setHasSeenAnimation(false);
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('sunetra_anim_seen');
+      sessionStorage.removeItem('chakshuh_anim_seen');
     }
   };
 
@@ -208,7 +208,7 @@ export default function App() {
             <div className="flex items-center space-x-2">
               <HeartPulse className="h-4 w-4 text-cyan-400" />
               <span className="font-semibold text-slate-300">
-                Sunetra
+                Chakshuh
               </span>
               <span className="text-slate-600 hidden sm:inline">&bull;</span>
               <span className="text-slate-400 hidden sm:inline">

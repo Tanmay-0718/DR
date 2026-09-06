@@ -1,6 +1,6 @@
 /**
  * ==============================================================================================
- * Sunetra - Pluggable Cloud EHR & Multi-Center Patient Registry Service
+ * Chakshuh - Pluggable Cloud EHR & Multi-Center Patient Registry Service
  * ==============================================================================================
  * 
  * ARCHITECTURE OVERVIEW FOR ENTERPRISE INTEGRATION:
@@ -8,7 +8,7 @@
  * This module manages patient Electronic Health Records (EHR) and telemetry payloads across
  * multiple Primary Health Centers (PHCs), Community Health Centers (CHCs), and Regional Referral Hubs.
  * 
- * It is built with an OPEN ADAPTER PATTERN so that when Sunetra is deployed by a healthcare 
+ * It is built with an OPEN ADAPTER PATTERN so that when Chakshuh is deployed by a healthcare 
  * provider, hospital conglomerate, or state telemedicine mission, IT teams can seamlessly 
  * connect their proprietary or cloud infrastructure without altering core algorithmic modules.
  * 
@@ -29,14 +29,14 @@
  */
 
 // Local Storage Keys for offline persistence & synchronization queue
-const STORAGE_KEY_CONFIG = 'sunetra_cloud_config_v1';
-const STORAGE_KEY_RECORDS = 'sunetra_patient_records_v1';
-const STORAGE_KEY_PENDING_SYNC = 'sunetra_pending_sync_queue_v1';
+const STORAGE_KEY_CONFIG = 'chakshuh_cloud_config_v1';
+const STORAGE_KEY_RECORDS = 'chakshuh_patient_records_v1';
+const STORAGE_KEY_PENDING_SYNC = 'chakshuh_pending_sync_queue_v1';
 
 // Default configuration
 const DEFAULT_CONFIG = {
   provider: 'mock', // 'mock' | 'rest' | 'fhir' | 'supabase' | 'aws'
-  endpointUrl: 'https://api.sunetra-health.cloud/v1/records',
+  endpointUrl: 'https://api.chakshuh-health.cloud/v1/records',
   fhirServerUrl: 'https://fhir.abdm.gov.in/v4',
   apiKey: 'demo-enterprise-key-sk-live-7719a4',
   centerId: 'PHC-MH-RTG-042',
@@ -399,11 +399,11 @@ class CloudEhrService {
         status: 'Online (Simulated Multi-Center Cluster)',
         latencyMs: Math.round(performance.now() - startTime),
         endpoints: {
-          centralRegistry: 'https://registry.sunetra-health.cloud/v1 (Healthy)',
+          centralRegistry: 'https://registry.chakshuh-health.cloud/v1 (Healthy)',
           fhirGateway: 'https://fhir.abdm.gov.in/R4 (Compliant)',
-          s3TelemetryBucket: 's3://sunetra-enc-telemetry-ap-south-1 (AES-256)'
+          s3TelemetryBucket: 's3://chakshuh-enc-telemetry-ap-south-1 (AES-256)'
         },
-        message: 'Successfully reached Sunetra Multi-Center Cloud Gateway. Ready for live enterprise handover.'
+        message: 'Successfully reached Chakshuh Multi-Center Cloud Gateway. Ready for live enterprise handover.'
       };
     }
 
@@ -418,7 +418,7 @@ class CloudEhrService {
         headers: {
           'Authorization': activeConfig.apiKey ? `Bearer ${activeConfig.apiKey}` : '',
           'Content-Type': 'application/json',
-          'X-Client-Version': 'Sunetra-v2.4-Edge'
+          'X-Client-Version': 'Chakshuh-v2.4-Edge'
         },
         signal: controller.signal
       });
@@ -634,7 +634,7 @@ class CloudEhrService {
     
     const fhirBundle = {
       resourceType: 'Bundle',
-      id: `sunetra-telemed-bundle-${Date.now()}`,
+      id: `chakshuh-telemed-bundle-${Date.now()}`,
       type: 'collection',
       timestamp: new Date().toISOString(),
       meta: {
@@ -666,7 +666,7 @@ class CloudEhrService {
                 display: 'Diabetic retinopathy assessment in fundus photography'
               }
             ],
-            text: `Sunetra Multi-Lesion DR Screening (Grade ${rec.icdrGrade} - ${rec.icdrLabel})`
+            text: `Chakshuh Multi-Lesion DR Screening (Grade ${rec.icdrGrade} - ${rec.icdrLabel})`
           },
           subject: {
             reference: `Patient/${rec.patientId}`,
@@ -681,11 +681,11 @@ class CloudEhrService {
           conclusion: `${rec.icdrLabel}. ETDRS Rule 4-2-1 Status: ${rec.etdrsStatus}. Referral Protocol: ${rec.referralUrgency}.`,
           extension: [
             {
-              url: 'https://sunetra.health.gov.in/fhir/StructureDefinition/ExaminedEye',
+              url: 'https://chakshuh.health.gov.in/fhir/StructureDefinition/ExaminedEye',
               valueString: rec.examinedEye
             },
             {
-              url: 'https://sunetra.health.gov.in/fhir/StructureDefinition/BiomarkerSummary',
+              url: 'https://chakshuh.health.gov.in/fhir/StructureDefinition/BiomarkerSummary',
               valueString: JSON.stringify(rec.biomarkers)
             }
           ]
