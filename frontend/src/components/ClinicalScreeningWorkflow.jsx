@@ -71,6 +71,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
   const [uploadedImageSrc, setUploadedImageSrc] = useState(null);
   const [odImageSrc, setOdImageSrc] = useState(null);
   const [osImageSrc, setOsImageSrc] = useState(null);
+  const [odFileName, setOdFileName] = useState('');
+  const [osFileName, setOsFileName] = useState('');
   const [selectedSample, setSelectedSample] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -94,7 +96,10 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     setPatientData(prev => ({ ...prev, patientId: `SUN-2026-${num}` }));
   };
 
-  const currentImage = (patientData.eye === 'OS' ? (osImageSrc || uploadedImageSrc) : (odImageSrc || uploadedImageSrc)) || uploadedImageSrc;
+  // Active examined eye image
+  const currentImage = patientData.eye === 'OS' 
+    ? (osImageSrc || (uploadedImageSrc && !odImageSrc ? uploadedImageSrc : null)) 
+    : (odImageSrc || (uploadedImageSrc && !osImageSrc ? uploadedImageSrc : null));
 
   // Auto-sync patient examination record to central Cloud EHR
   useEffect(() => {
@@ -258,7 +263,6 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     const file = e.target.files?.[0];
     if (file) {
       const name = file.name;
-      setFileName(name);
       setSelectedSample(null);
       setClinicianOverrideGrade(null);
       setClinicianConfirmedNV(null);
@@ -268,22 +272,40 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
       setClinicianConfirmedVB(null);
       
       const eyeToSet = targetEye || patientData.eye || 'OD';
-      setPatientData(prev => ({ ...prev, eye: eyeToSet }));
 
       const reader = new FileReader();
       reader.onload = (ev) => {
         const src = ev.target.result;
         if (eyeToSet === 'OD') {
           setOdImageSrc(src);
-          if (!osImageSrc) setOsImageSrc(src);
+          setOdFileName(name);
         } else {
           setOsImageSrc(src);
-          if (!odImageSrc) setOdImageSrc(src);
+          setOsFileName(name);
         }
-        setUploadedImageSrc(src);
-        processImage(src, null, name, {});
+
+        // If diagnostic results are already showing (Step 4) and user uploaded/replaced the active eye, re-process
+        if (pipelineResult && patientData.eye === eyeToSet) {
+          setUploadedImageSrc(src);
+          setFileName(name);
+          processImage(src, null, name, {});
+        }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Start diagnostic screening on uploaded image from Step 2
+  const handleStartScreening = (targetEye = null) => {
+    const chosenEye = targetEye || (patientData.eye === 'OS' && osImageSrc ? 'OS' : (odImageSrc ? 'OD' : 'OS'));
+    const activeImg = chosenEye === 'OS' ? (osImageSrc || odImageSrc) : (odImageSrc || osImageSrc);
+    const fName = chosenEye === 'OS' ? (osFileName || 'Left_Eye_OS.png') : (odFileName || 'Right_Eye_OD.png');
+
+    setPatientData(prev => ({ ...prev, eye: chosenEye }));
+    setFileName(fName);
+    setUploadedImageSrc(activeImg);
+    if (activeImg) {
+      processImage(activeImg, null, fName, {});
     }
   };
 
@@ -291,9 +313,12 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
   const handleSwitchExaminedEye = (newEye) => {
     if (patientData.eye === newEye && pipelineResult) return;
     setPatientData(prev => ({ ...prev, eye: newEye }));
-    const nextImage = newEye === 'OS' ? (osImageSrc || uploadedImageSrc) : (odImageSrc || uploadedImageSrc);
+    const nextImage = newEye === 'OS' ? osImageSrc : odImageSrc;
+    const nextFileName = newEye === 'OS' ? (osFileName || 'Left_Eye_OS.png') : (odFileName || 'Right_Eye_OD.png');
     if (nextImage) {
-      processImage(nextImage, selectedSample, fileName, {});
+      setUploadedImageSrc(nextImage);
+      setFileName(nextFileName);
+      processImage(nextImage, selectedSample, nextFileName, {});
     }
   };
 
@@ -305,6 +330,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     const os = pair ? pair.os : sample.path;
     setOdImageSrc(od);
     setOsImageSrc(os);
+    setOdFileName(`${sample.title} (OD)`);
+    setOsFileName(`${sample.title} (OS)`);
 
     const activeImg = patientData.eye === 'OS' ? os : od;
     setUploadedImageSrc(activeImg);
@@ -323,6 +350,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
     setUploadedImageSrc(null);
     setOdImageSrc(null);
     setOsImageSrc(null);
+    setOdFileName('');
+    setOsFileName('');
     setSelectedSample(null);
     setFileName('');
     setPipelineResult(null);
@@ -466,60 +495,165 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
       </div>
 
       {/* STEP 2: FUNDUS IMAGE UPLOAD & SELECTION */}
-      {!currentImage && (
+      {!pipelineResult && !isProcessing && (
         <div className="no-print space-y-6">
           {/* Dual Bilateral Upload Zone (OD Right Eye and OS Left Eye) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Right Eye (OD) Upload Card */}
-            <label className="border-2 border-dashed border-slate-700 hover:border-cyan-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 cursor-pointer group">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleFileUpload(e, 'OD')}
-                className="hidden" 
-              />
-              <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 group-hover:bg-cyan-500/25 text-cyan-400 group-hover:text-cyan-300 border border-cyan-500/30 group-hover:border-cyan-400 flex items-center justify-center group-hover:scale-110 transition-all shadow-md">
-                <Eye className="h-7 w-7" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5 group-hover:text-cyan-300 transition-colors">
-                  <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block"></span>
-                  <span>Right Eye (OD &bull; Oculus Dexter)</span>
-                </h4>
-                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                  Standard 45° macula-centered retinal photograph for the right eye.
-                </p>
-              </div>
-              <div className="px-5 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 group-hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/20 transition-all">
-                Upload Right Eye (OD)
-              </div>
-            </label>
+            <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all flex flex-col items-center justify-center space-y-3 ${
+              odImageSrc ? 'border-cyan-500/80 bg-cyan-950/20' : 'border-slate-700 hover:border-cyan-500/80 bg-slate-900/40 hover:bg-slate-900/60'
+            }`}>
+              {odImageSrc ? (
+                <div className="w-full flex flex-col items-center space-y-3">
+                  <div className="h-36 w-full max-w-xs bg-black rounded-xl overflow-hidden border border-cyan-500/40 flex items-center justify-center relative shadow-lg">
+                    <img src={odImageSrc} alt="Right Eye (OD) Preview" className="h-full w-full object-contain" />
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center space-x-1 shadow">
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>OD Ready</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block"></span>
+                      <span>Right Eye (OD &bull; Oculus Dexter)</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5 font-mono truncate max-w-xs">
+                      {odFileName || 'Right Eye Photograph'}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-1">
+                    <label className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer transition-colors">
+                      <span>Change Image</span>
+                      <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OD')} className="hidden" />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleStartScreening('OD')}
+                      className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow transition-colors flex items-center space-x-1"
+                    >
+                      <span>Screen OD Now</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="w-full flex flex-col items-center space-y-3 cursor-pointer group">
+                  <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OD')} className="hidden" />
+                  <div className="h-14 w-14 rounded-2xl bg-cyan-500/10 group-hover:bg-cyan-500/25 text-cyan-400 group-hover:text-cyan-300 border border-cyan-500/30 group-hover:border-cyan-400 flex items-center justify-center group-hover:scale-110 transition-all shadow-md">
+                    <Eye className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5 group-hover:text-cyan-300 transition-colors">
+                      <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block"></span>
+                      <span>Right Eye (OD &bull; Oculus Dexter)</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                      Click or drop to upload right eye retinal photograph
+                    </p>
+                  </div>
+                  <div className="px-5 py-2.5 rounded-xl font-bold text-xs bg-cyan-600 group-hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/20 transition-all">
+                    Upload Right Eye (OD)
+                  </div>
+                </label>
+              )}
+            </div>
 
             {/* Left Eye (OS) Upload Card */}
-            <label className="border-2 border-dashed border-slate-700 hover:border-sky-500/80 rounded-2xl p-6 text-center bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center space-y-3 cursor-pointer group">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleFileUpload(e, 'OS')}
-                className="hidden" 
-              />
-              <div className="h-14 w-14 rounded-2xl bg-sky-500/10 group-hover:bg-sky-500/25 text-sky-400 group-hover:text-sky-300 border border-sky-500/30 group-hover:border-sky-400 flex items-center justify-center group-hover:scale-110 transition-all shadow-md">
-                <Eye className="h-7 w-7" />
-              </div>
+            <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all flex flex-col items-center justify-center space-y-3 ${
+              osImageSrc ? 'border-sky-500/80 bg-sky-950/20' : 'border-slate-700 hover:border-sky-500/80 bg-slate-900/40 hover:bg-slate-900/60'
+            }`}>
+              {osImageSrc ? (
+                <div className="w-full flex flex-col items-center space-y-3">
+                  <div className="h-36 w-full max-w-xs bg-black rounded-xl overflow-hidden border border-sky-500/40 flex items-center justify-center relative shadow-lg">
+                    <img src={osImageSrc} alt="Left Eye (OS) Preview" className="h-full w-full object-contain" />
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center space-x-1 shadow">
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>OS Ready</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-sky-400 inline-block"></span>
+                      <span>Left Eye (OS &bull; Oculus Sinister)</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5 font-mono truncate max-w-xs">
+                      {osFileName || 'Left Eye Photograph'}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-1">
+                    <label className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer transition-colors">
+                      <span>Change Image</span>
+                      <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OS')} className="hidden" />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleStartScreening('OS')}
+                      className="px-4 py-1.5 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow transition-colors flex items-center space-x-1"
+                    >
+                      <span>Screen OS Now</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="w-full flex flex-col items-center space-y-3 cursor-pointer group">
+                  <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OS')} className="hidden" />
+                  <div className="h-14 w-14 rounded-2xl bg-sky-500/10 group-hover:bg-sky-500/25 text-sky-400 group-hover:text-sky-300 border border-sky-500/30 group-hover:border-sky-400 flex items-center justify-center group-hover:scale-110 transition-all shadow-md">
+                    <Eye className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5 group-hover:text-sky-300 transition-colors">
+                      <span className="h-2.5 w-2.5 rounded-full bg-sky-400 inline-block"></span>
+                      <span>Left Eye (OS &bull; Oculus Sinister)</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                      Click or drop to upload left eye retinal photograph
+                    </p>
+                  </div>
+                  <div className="px-5 py-2.5 rounded-xl font-bold text-xs bg-sky-600 group-hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 transition-all">
+                    Upload Left Eye (OS)
+                  </div>
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Unified Bilateral Launch Banner when at least one image is ready */}
+          {(odImageSrc || osImageSrc) && (
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-cyan-500/40 flex flex-wrap items-center justify-between gap-4 shadow-xl">
               <div>
-                <h4 className="text-sm font-bold text-slate-100 flex items-center justify-center space-x-1.5 group-hover:text-sky-300 transition-colors">
-                  <span className="h-2.5 w-2.5 rounded-full bg-sky-400 inline-block"></span>
-                  <span>Left Eye (OS &bull; Oculus Sinister)</span>
-                </h4>
-                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                  Standard 45° macula-centered retinal photograph for the left eye.
+                <div className="text-xs font-bold text-slate-100 flex items-center space-x-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>
+                    {odImageSrc && osImageSrc 
+                      ? 'Bilateral Examination Ready (Both Eyes Uploaded Separately)' 
+                      : (odImageSrc ? 'Right Eye (OD) Photo Ready' : 'Left Eye (OS) Photo Ready')}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {odImageSrc && osImageSrc 
+                    ? 'Both eyes have distinct clinical photographs. Starting analysis on ' + (patientData.eye === 'OD' ? 'Right Eye (OD)' : 'Left Eye (OS)') + '.'
+                    : 'You can upload the second eye photograph above, or proceed to analyze this eye now.'}
                 </p>
               </div>
-              <div className="px-5 py-2.5 rounded-xl font-bold text-xs bg-sky-600 group-hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 transition-all">
-                Upload Left Eye (OS)
+
+              <div className="flex items-center space-x-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleStartScreening()}
+                  className="px-6 py-2.5 rounded-xl font-black text-xs bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 shadow-lg shadow-cyan-500/25 transition-all flex items-center space-x-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>
+                    {odImageSrc && osImageSrc 
+                      ? `Start Bilateral Screening (Analyze ${patientData.eye})` 
+                      : `Analyze ${odImageSrc ? 'Right Eye (OD)' : 'Left Eye (OS)'}`}
+                  </span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
-            </label>
-          </div>
+            </div>
+          )}
 
           {/* Quick preset selector tray */}
           <div className="space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
@@ -690,30 +824,50 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                           <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 inline-block"></span>
                           <span>RIGHT EYE (OD &bull; Oculus Dexter)</span>
                         </span>
-                        {patientData.eye === 'OD' ? (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                            Active Examined Eye
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSwitchExaminedEye('OD')}
-                            className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
-                          >
-                            <span>Analyze Right Eye (OD)</span>
-                            <ChevronRight className="h-3 w-3" />
-                          </button>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          {patientData.eye === 'OD' ? (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                              Active Examined Eye
+                            </span>
+                          ) : (
+                            odImageSrc && (
+                              <button
+                                type="button"
+                                onClick={() => handleSwitchExaminedEye('OD')}
+                                className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
+                              >
+                                <span>Analyze Right Eye (OD)</span>
+                                <ChevronRight className="h-3 w-3" />
+                              </button>
+                            )
+                          )}
+                          <label className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer flex items-center space-x-1">
+                            <Upload className="h-2.5 w-2.5 text-cyan-400" />
+                            <span>{odImageSrc ? 'Replace' : 'Upload'}</span>
+                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OD')} className="hidden" />
+                          </label>
+                        </div>
                       </div>
                       <div className="h-44 sm:h-52 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
-                        <img 
-                          src={odImageSrc || (patientData.eye === 'OD' ? currentImage : '/samples/fundus_001_Grade_0_No_DR.png')} 
-                          alt="Right Eye (OD) Fundus" 
-                          className="h-full w-full object-contain"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
-                          OD &bull; 45° FOV
-                        </div>
+                        {odImageSrc ? (
+                          <>
+                            <img 
+                              src={odImageSrc} 
+                              alt="Right Eye (OD) Fundus" 
+                              className="h-full w-full object-contain"
+                            />
+                            <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
+                              OD &bull; 45° FOV
+                            </div>
+                          </>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center space-y-2 text-slate-500 cursor-pointer hover:text-slate-300 p-4 text-center">
+                            <Upload className="h-6 w-6 text-cyan-500" />
+                            <span className="text-xs font-semibold text-slate-300">No Right Eye photo uploaded</span>
+                            <span className="text-[10px] text-slate-400">Click to upload Right Eye (OD)</span>
+                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OD')} className="hidden" />
+                          </label>
+                        )}
                       </div>
                     </div>
 
@@ -728,30 +882,50 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                           <span className="h-2.5 w-2.5 rounded-full bg-sky-500 inline-block"></span>
                           <span>LEFT EYE (OS &bull; Oculus Sinister)</span>
                         </span>
-                        {patientData.eye === 'OS' ? (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/40">
-                            Active Examined Eye
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSwitchExaminedEye('OS')}
-                            className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
-                          >
-                            <span>Analyze Left Eye (OS)</span>
-                            <ChevronRight className="h-3 w-3" />
-                          </button>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          {patientData.eye === 'OS' ? (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                              Active Examined Eye
+                            </span>
+                          ) : (
+                            osImageSrc && (
+                              <button
+                                type="button"
+                                onClick={() => handleSwitchExaminedEye('OS')}
+                                className="text-[10px] font-mono px-2.5 py-1 rounded font-bold uppercase bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-colors flex items-center space-x-1"
+                              >
+                                <span>Analyze Left Eye (OS)</span>
+                                <ChevronRight className="h-3 w-3" />
+                              </button>
+                            )
+                          )}
+                          <label className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer flex items-center space-x-1">
+                            <Upload className="h-2.5 w-2.5 text-sky-400" />
+                            <span>{osImageSrc ? 'Replace' : 'Upload'}</span>
+                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OS')} className="hidden" />
+                          </label>
+                        </div>
                       </div>
                       <div className="h-44 sm:h-52 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
-                        <img 
-                          src={osImageSrc || (patientData.eye === 'OS' ? currentImage : '/samples/fundus_002_Grade_0_No_DR.png')} 
-                          alt="Left Eye (OS) Fundus" 
-                          className="h-full w-full object-contain"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
-                          OS &bull; 45° FOV
-                        </div>
+                        {osImageSrc ? (
+                          <>
+                            <img 
+                              src={osImageSrc} 
+                              alt="Left Eye (OS) Fundus" 
+                              className="h-full w-full object-contain"
+                            />
+                            <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-slate-300 font-mono">
+                              OS &bull; 45° FOV
+                            </div>
+                          </>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center space-y-2 text-slate-500 cursor-pointer hover:text-slate-300 p-4 text-center">
+                            <Upload className="h-6 w-6 text-sky-500" />
+                            <span className="text-xs font-semibold text-slate-300">No Left Eye photo uploaded</span>
+                            <span className="text-[10px] text-slate-400">Click to upload Left Eye (OS)</span>
+                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'OS')} className="hidden" />
+                          </label>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -904,8 +1078,8 @@ export default function ClinicalScreeningWorkflow({ onBackToHome, onBackToLandin
                   <XAIReport 
                     result={pipelineResult} 
                     imageUrl={currentImage}
-                    odImageUrl={odImageSrc || (patientData.eye === 'OD' ? currentImage : '/samples/fundus_001_Grade_0_No_DR.png')}
-                    osImageUrl={osImageSrc || (patientData.eye === 'OS' ? currentImage : '/samples/fundus_002_Grade_0_No_DR.png')}
+                    odImageUrl={odImageSrc}
+                    osImageUrl={osImageSrc}
                     patientId={patientData.patientId}
                     patientData={patientData}
                     siteName={patientData.center}
